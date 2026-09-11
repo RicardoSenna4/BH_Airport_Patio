@@ -117,11 +117,14 @@ def update_checklist_template(template_id: int, data: ChecklistCreate, db: Sessi
 
 
 @app.patch("/checklist-templates/{template_id}/status", response_model=ChecklistOut)
-def change_checklist_status(template_id: int, data: ChecklistStatusChange, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR, Role.COORDENACAO))):
+def change_checklist_status(template_id: int, data: ChecklistStatusChange, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR, Role.ANALISTA, Role.COORDENACAO, Role.ADMINISTRADOR))):
     template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
     if not template:
         raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
     allowed = {
+        Role.FISCAL: {ChecklistStatus.EM_REVISAO},
+        Role.SUPERVISOR: {ChecklistStatus.EM_REVISAO},
+        Role.ANALISTA: {ChecklistStatus.EM_REVISAO},
         Role.ADMINISTRADOR: {ChecklistStatus.RASCUNHO, ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
         Role.COORDENACAO: {ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
     }
