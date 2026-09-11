@@ -90,7 +90,7 @@ def list_checklist_templates(db: Session = Depends(get_db), _: User = Depends(al
 
 
 @app.post("/checklist-templates", response_model=ChecklistOut, status_code=201)
-def create_checklist_template(data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+def create_checklist_template(data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR, Role.ANALISTA, Role.COORDENACAO, Role.ADMINISTRADOR))):
     template = ChecklistTemplate(name=data.name, inspection_type=data.inspection_type.upper(), created_by=user.id, items=[ChecklistItem(**item.model_dump()) for item in data.items])
     db.add(template)
     db.flush()
@@ -101,7 +101,7 @@ def create_checklist_template(data: ChecklistCreate, db: Session = Depends(get_d
 
 
 @app.patch("/checklist-templates/{template_id}", response_model=ChecklistOut)
-def update_checklist_template(template_id: int, data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+def update_checklist_template(template_id: int, data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.COORDENACAO, Role.ADMINISTRADOR))):
     template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
     if not template:
         raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
