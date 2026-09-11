@@ -11,9 +11,15 @@ async function request(path: string, options: RequestInit = {}) {
   const token = localStorage.getItem('aeroops_token');
   const headers = new Headers(options.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
+  if (options.body && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams)) headers.set('Content-Type', 'application/json');
   const response = await fetch(`${API}${path}`, { ...options, headers });
-  if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.detail || 'Não foi possível concluir a operação'); }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const detail = Array.isArray(body.detail)
+      ? body.detail.map((item: any) => item.msg || item.detail || JSON.stringify(item)).join('; ')
+      : body.detail;
+    throw new Error(detail || 'Não foi possível concluir a operação');
+  }
   return response.status === 204 ? null : response.json();
 }
 
