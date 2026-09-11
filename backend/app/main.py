@@ -13,13 +13,15 @@ from starlette.staticfiles import StaticFiles
 from .config import settings
 from .database import Base, SessionLocal, engine, get_db
 from .models import (
-    AnswerStatus, Attachment, AuditLog, Equipment, Inspection, InspectionAnswer,
-    InspectionStatus, Occurrence, OccurrenceStatus, Role, Severity, User,
+    AnswerStatus, Attachment, AuditLog, ChecklistItem, ChecklistStatus, ChecklistTemplate,
+    Equipment, Inspection, InspectionAnswer, InspectionStatus, Occurrence, OccurrenceStatus,
+    Role, Severity, User,
 )
 from .schemas import (
-    AttachmentOut, DashboardSummary, EquipmentCreate, EquipmentOut, EquipmentUpdate,
-    GridCellOut, InspectionCreate, InspectionOut, OccurrenceOut, OccurrenceTransition,
-    ReportSummary, Token, UserCreate, UserOut, UserUpdate,
+    AttachmentOut, ChecklistCreate, ChecklistOut, ChecklistStatusChange, DashboardSummary,
+    EquipmentCreate, EquipmentOut, EquipmentUpdate, GridCellOut, InspectionCreate,
+    InspectionOut, OccurrenceOut, OccurrenceTransition, ReportSummary, Token, UserCreate,
+    UserOut, UserUpdate,
 )
 from .security import allow_roles, create_token, current_user, hash_password, verify_password
 
@@ -80,6 +82,59 @@ def health():
 @app.get("/checklists/{inspection_type}")
 def checklist(inspection_type: str, _: User = Depends(current_user)):
     return {"type": inspection_type.upper(), "version": 1, "items": [{"item_key": key, "label": label} for key, label in CHECKLIST.get(inspection_type.upper(), CHECKLIST["PATIO"])]}
+
+
+@app.get("/checklist-templates", response_model=list[ChecklistOut])
+def list_checklist_templates(db: Session = Depends(get_db), _: User = Depends(allow_roles(Role.ADMINISTRADOR, Role.COORDENACAO, Role.SUPERVISOR, Role.ANALISTA))):
+    return db.scalars(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).order_by(ChecklistTemplate.updated_at.desc())).all()
+
+
+@app.post("/checklist-templates", response_model=ChecklistOut, status_code=201)
+def create_checklist_template(data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+    template = ChecklistTemplate(name=data.name, inspection_type=data.inspection_type.upper(), created_by=user.id, items=[ChecklistItem(**item.model_dump()) for item in data.items])
+    db.add(template)
+    db.flush()
+    audit(db, user, "checklist_template", template.id, "CREATE", f"status={ChecklistStatus.RASCUNHO.value}")
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@app.patch("/checklist-templates/{template_id}", response_model=ChecklistOut)
+def update_checklist_template(template_id: int, data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+    template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
+    if not template:
+        raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
+    if template.status == ChecklistStatus.PUBLICADO:
+        raise HTTPException(status_code=409, detail="Checklist publicado é imutável; crie uma nova versão")
+    template.name, template.inspection_type = data.name, data.inspection_type.upper()
+    template.items.clear()
+    template.items.extend(ChecklistItem(**item.model_dump()) for item in data.items)
+    audit(db, user, "checklist_template", template.id, "UPDATE")
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@app.patch("/checklist-templates/{template_id}/status", response_model=ChecklistOut)
+def change_checklist_status(template_id: int, data: ChecklistStatusChange, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR, Role.COORDENACAO))):
+    template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
+    if not template:
+        raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
+    allowed = {
+        Role.ADMINISTRADOR: {ChecklistStatus.RASCUNHO, ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
+        Role.COORDENACAO: {ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
+    }
+    if data.status not in allowed[user.role]:
+        raise HTTPException(status_code=403, detail="Perfil sem permissão para este status")
+    if data.status == ChecklistStatus.PUBLICADO and not template.items:
+        raise HTTPException(status_code=422, detail="Checklist precisa ter ao menos um item")
+    previous = template.status.value
+    template.status = data.status
+    audit(db, user, "checklist_template", template.id, "STATUS_CHANGE", f"from={previous};to={data.status.value}")
+    db.commit()
+    db.refresh(template)
+    return template
 
 
 @app.get("/grid", response_model=list[GridCellOut])
