@@ -1,0 +1,1240 @@
+/* Confins Design System — folha completa (tokens + base + componentes). */
+
+/* GERADO por scripts/gerar-tokens.mjs — não edite à mão.
+   Fonte: tokens/confins-tokens.json · rode `npm run tokens` após alterar a fonte.
+
+   Camada 1 — primitivas (--bha-c-*): a rampa. NUNCA usar direto em componente.
+   Camada 2 — semântica (--bha-*): usar sempre esta.
+   Tema de alto contraste (FIDS / baixa visão): [data-theme="hc"]. */
+
+:root {
+  --bha-c-primary-50: #f2f7ff;
+  --bha-c-primary-100: #e0edff;
+  --bha-c-primary-200: #c3dcff;
+  --bha-c-primary-300: #99c4ff;
+  --bha-c-primary-400: #5fa3ff;
+  --bha-c-primary-500: #2f82ec;
+  --bha-c-primary-600: #0063e1;
+  --bha-c-primary-700: #0047c7;
+  --bha-c-primary-800: #0000cc;
+  --bha-c-primary-900: #000097;
+  --bha-c-primary-950: #000066;
+  --bha-c-secondary-50: #fff4f0;
+  --bha-c-secondary-100: #ffe7df;
+  --bha-c-secondary-200: #ffd1c1;
+  --bha-c-secondary-300: #ffb195;
+  --bha-c-secondary-400: #ff8253;
+  --bha-c-secondary-500: #eb5c1b;
+  --bha-c-secondary-600: #c44500;
+  --bha-c-secondary-700: #9d3500;
+  --bha-c-secondary-800: #792600;
+  --bha-c-secondary-900: #581800;
+  --bha-c-secondary-950: #3b0b00;
+  --bha-c-neutral-50: #f6f7f8;
+  --bha-c-neutral-100: #ebedf0;
+  --bha-c-neutral-200: #dadce1;
+  --bha-c-neutral-300: #c2c6cd;
+  --bha-c-neutral-400: #a5a9b2;
+  --bha-c-neutral-500: #898e96;
+  --bha-c-neutral-600: #6f737b;
+  --bha-c-neutral-700: #575b62;
+  --bha-c-neutral-800: #42454b;
+  --bha-c-neutral-900: #2e3035;
+  --bha-c-neutral-950: #1d1e21;
+  --bha-c-status-ontime-50: #e5ffe7;
+  --bha-c-status-ontime-100: #c5facb;
+  --bha-c-status-ontime-200: #8eef9e;
+  --bha-c-status-ontime-300: #34db63;
+  --bha-c-status-ontime-400: #00bf4c;
+  --bha-c-status-ontime-500: #00a03e;
+  --bha-c-status-ontime-600: #008331;
+  --bha-c-status-ontime-700: #006926;
+  --bha-c-status-ontime-800: #00511b;
+  --bha-c-status-ontime-900: #003b11;
+  --bha-c-status-ontime-950: #002707;
+  --bha-c-status-delayed-50: #fff5e9;
+  --bha-c-status-delayed-100: #ffe9cd;
+  --bha-c-status-delayed-200: #fed59f;
+  --bha-c-status-delayed-300: #f4ba68;
+  --bha-c-status-delayed-400: #df9921;
+  --bha-c-status-delayed-500: #be7f00;
+  --bha-c-status-delayed-600: #9b6700;
+  --bha-c-status-delayed-700: #7c5100;
+  --bha-c-status-delayed-800: #5f3d00;
+  --bha-c-status-delayed-900: #442a00;
+  --bha-c-status-delayed-950: #2d1900;
+  --bha-c-status-boarding-50: #e8fbff;
+  --bha-c-status-boarding-100: #cbf6ff;
+  --bha-c-status-boarding-200: #9eebfb;
+  --bha-c-status-boarding-300: #5fd9f0;
+  --bha-c-status-boarding-400: #00bed8;
+  --bha-c-status-boarding-500: #009fb5;
+  --bha-c-status-boarding-600: #008194;
+  --bha-c-status-boarding-700: #006776;
+  --bha-c-status-boarding-800: #004e5a;
+  --bha-c-status-boarding-900: #003741;
+  --bha-c-status-boarding-950: #00232a;
+  --bha-c-status-lastcall-50: #fff4f2;
+  --bha-c-status-lastcall-100: #ffe6e2;
+  --bha-c-status-lastcall-200: #ffd0c7;
+  --bha-c-status-lastcall-300: #ffaea0;
+  --bha-c-status-lastcall-400: #ff7c69;
+  --bha-c-status-lastcall-500: #e85644;
+  --bha-c-status-lastcall-600: #c7392a;
+  --bha-c-status-lastcall-700: #a22619;
+  --bha-c-status-lastcall-800: #7e1a10;
+  --bha-c-status-lastcall-900: #5b1109;
+  --bha-c-status-lastcall-950: #3c0804;
+  --bha-c-status-gate-50: #fdf3ff;
+  --bha-c-status-gate-100: #fae4ff;
+  --bha-c-status-gate-200: #f5cbff;
+  --bha-c-status-gate-300: #eaaaf9;
+  --bha-c-status-gate-400: #d486e6;
+  --bha-c-status-gate-500: #ba66cd;
+  --bha-c-status-gate-600: #9c4cae;
+  --bha-c-status-gate-700: #7e388e;
+  --bha-c-status-gate-800: #61296e;
+  --bha-c-status-gate-900: #451c4f;
+  --bha-c-status-gate-950: #2d0f33;
+  --bha-c-status-cancelled-50: #fff4f4;
+  --bha-c-status-cancelled-100: #ffe6e7;
+  --bha-c-status-cancelled-200: #ffced1;
+  --bha-c-status-cancelled-300: #ffabb2;
+  --bha-c-status-cancelled-400: #ff7889;
+  --bha-c-status-cancelled-500: #e7516b;
+  --bha-c-status-cancelled-600: #c63452;
+  --bha-c-status-cancelled-700: #a1213e;
+  --bha-c-status-cancelled-800: #7d162e;
+  --bha-c-status-cancelled-900: #5a0e1f;
+  --bha-c-status-cancelled-950: #3c0612;
+
+  --bha-surface-default: #ffffff;
+  --bha-surface-subtle: var(--bha-c-neutral-50);
+  --bha-surface-muted: var(--bha-c-neutral-100);
+  --bha-surface-media: var(--bha-c-neutral-950);
+  --bha-surface-inverse: var(--bha-c-primary-950);
+  --bha-surface-brand: var(--bha-c-primary-800);
+  --bha-surface-brand-vivid: var(--bha-c-primary-500);
+  --bha-surface-brand-subtle: var(--bha-c-primary-50);
+  --bha-surface-accent: var(--bha-c-secondary-600);
+  --bha-surface-accent-subtle: var(--bha-c-secondary-50);
+  --bha-surface-overlay: #000066a3;
+  --bha-text-default: var(--bha-c-neutral-900);
+  --bha-text-muted: var(--bha-c-neutral-700);
+  --bha-text-subtle: var(--bha-c-neutral-600);
+  --bha-text-brand: var(--bha-c-primary-800);
+  --bha-text-link: var(--bha-c-primary-800);
+  --bha-text-link-hover: var(--bha-c-primary-950);
+  --bha-text-on-brand: #ffffff;
+  --bha-text-on-inverse: #ffffff;
+  --bha-text-on-accent: #ffffff;
+  --bha-text-critical: var(--bha-c-status-cancelled-800);
+  --bha-text-disabled: var(--bha-c-neutral-400);
+  --bha-border-subtle: var(--bha-c-neutral-200);
+  --bha-border-default: var(--bha-c-neutral-300);
+  --bha-border-strong: var(--bha-c-neutral-500);
+  --bha-border-brand: var(--bha-c-primary-600);
+  --bha-border-focus: var(--bha-c-secondary-500);
+  --bha-border-critical: var(--bha-c-status-cancelled-600);
+  --bha-action-primary-bg: var(--bha-c-primary-800);
+  --bha-action-primary-bg-hover: var(--bha-c-primary-900);
+  --bha-action-primary-bg-active: var(--bha-c-primary-950);
+  --bha-action-primary-fg: #ffffff;
+  --bha-action-secondary-border: var(--bha-c-primary-800);
+  --bha-action-secondary-fg: var(--bha-c-primary-800);
+  --bha-action-secondary-bg-hover: var(--bha-c-primary-50);
+  --bha-action-ghost-fg: var(--bha-c-primary-800);
+  --bha-action-ghost-bg-hover: var(--bha-c-neutral-100);
+  --bha-action-accent-bg: var(--bha-c-secondary-600);
+  --bha-action-accent-bg-hover: var(--bha-c-secondary-700);
+  --bha-action-critical-bg: var(--bha-c-status-cancelled-700);
+  --bha-action-disabled-bg: var(--bha-c-neutral-200);
+  --bha-action-disabled-fg: var(--bha-c-neutral-400);
+  --bha-status-ontime-bg: var(--bha-c-status-ontime-100);
+  --bha-status-ontime-text: var(--bha-c-status-ontime-800);
+  --bha-status-ontime-border: var(--bha-c-status-ontime-300);
+  --bha-status-ontime-solid: var(--bha-c-status-ontime-700);
+  --bha-status-ontime-on-solid: #ffffff;
+  --bha-status-ontime-bg-inverse: var(--bha-c-status-ontime-950);
+  --bha-status-ontime-text-inverse: var(--bha-c-status-ontime-300);
+  --bha-status-delayed-bg: var(--bha-c-status-delayed-100);
+  --bha-status-delayed-text: var(--bha-c-status-delayed-800);
+  --bha-status-delayed-border: var(--bha-c-status-delayed-300);
+  --bha-status-delayed-solid: var(--bha-c-status-delayed-700);
+  --bha-status-delayed-on-solid: #ffffff;
+  --bha-status-delayed-bg-inverse: var(--bha-c-status-delayed-950);
+  --bha-status-delayed-text-inverse: var(--bha-c-status-delayed-300);
+  --bha-status-boarding-bg: var(--bha-c-status-boarding-100);
+  --bha-status-boarding-text: var(--bha-c-status-boarding-800);
+  --bha-status-boarding-border: var(--bha-c-status-boarding-300);
+  --bha-status-boarding-solid: var(--bha-c-status-boarding-700);
+  --bha-status-boarding-on-solid: #ffffff;
+  --bha-status-boarding-bg-inverse: var(--bha-c-status-boarding-950);
+  --bha-status-boarding-text-inverse: var(--bha-c-status-boarding-300);
+  --bha-status-lastcall-bg: var(--bha-c-status-lastcall-100);
+  --bha-status-lastcall-text: var(--bha-c-status-lastcall-800);
+  --bha-status-lastcall-border: var(--bha-c-status-lastcall-300);
+  --bha-status-lastcall-solid: var(--bha-c-status-lastcall-700);
+  --bha-status-lastcall-on-solid: #ffffff;
+  --bha-status-lastcall-bg-inverse: var(--bha-c-status-lastcall-950);
+  --bha-status-lastcall-text-inverse: var(--bha-c-status-lastcall-300);
+  --bha-status-gate-bg: var(--bha-c-status-gate-100);
+  --bha-status-gate-text: var(--bha-c-status-gate-800);
+  --bha-status-gate-border: var(--bha-c-status-gate-300);
+  --bha-status-gate-solid: var(--bha-c-status-gate-700);
+  --bha-status-gate-on-solid: #ffffff;
+  --bha-status-gate-bg-inverse: var(--bha-c-status-gate-950);
+  --bha-status-gate-text-inverse: var(--bha-c-status-gate-300);
+  --bha-status-cancelled-bg: var(--bha-c-status-cancelled-100);
+  --bha-status-cancelled-text: var(--bha-c-status-cancelled-800);
+  --bha-status-cancelled-border: var(--bha-c-status-cancelled-300);
+  --bha-status-cancelled-solid: var(--bha-c-status-cancelled-700);
+  --bha-status-cancelled-on-solid: #ffffff;
+  --bha-status-cancelled-bg-inverse: var(--bha-c-status-cancelled-950);
+  --bha-status-cancelled-text-inverse: var(--bha-c-status-cancelled-300);
+  --bha-status-landed-bg: var(--bha-c-neutral-100);
+  --bha-status-landed-text: var(--bha-c-neutral-800);
+  --bha-status-landed-border: var(--bha-c-neutral-300);
+  --bha-status-landed-solid: var(--bha-c-neutral-700);
+  --bha-status-landed-on-solid: #ffffff;
+  --bha-status-landed-bg-inverse: var(--bha-c-neutral-900);
+  --bha-status-landed-text-inverse: var(--bha-c-neutral-300);
+  --bha-space-0: 0px;
+  --bha-space-1: 4px;
+  --bha-space-2: 8px;
+  --bha-space-3: 12px;
+  --bha-space-4: 16px;
+  --bha-space-5: 20px;
+  --bha-space-6: 24px;
+  --bha-space-8: 32px;
+  --bha-space-10: 40px;
+  --bha-space-12: 48px;
+  --bha-space-16: 64px;
+  --bha-space-20: 80px;
+  --bha-space-24: 96px;
+  --bha-space-32: 128px;
+  --bha-radius-none: 0px;
+  --bha-radius-xs: 2px;
+  --bha-radius-sm: 4px;
+  --bha-radius-md: 8px;
+  --bha-radius-lg: 12px;
+  --bha-radius-xl: 16px;
+  --bha-radius-pill: 999px;
+  --bha-font-family-ui: Inter, "Helvetica Neue", Arial, sans-serif;
+  --bha-font-family-data: "IBM Plex Mono", SFMono-Regular, monospace;
+  --bha-font-weight-regular: 400;
+  --bha-font-weight-medium: 500;
+  --bha-font-weight-semibold: 600;
+  --bha-font-weight-bold: 700;
+  --bha-font-weight-black: 800;
+  --bha-font-size-2xs: 12px;
+  --bha-font-size-xs: 14px;
+  --bha-font-size-sm: 16px;
+  --bha-font-size-md: 20px;
+  --bha-font-size-lg: 24px;
+  --bha-font-size-xl: 28px;
+  --bha-font-size-2xl: 34px;
+  --bha-font-size-3xl: 40px;
+  --bha-font-size-4xl: 48px;
+  --bha-font-size-5xl: 58px;
+  --bha-font-size-6xl: 68px;
+  --bha-font-line-height-tight: 1.1;
+  --bha-font-line-height-snug: 1.25;
+  --bha-font-line-height-data: 1.4;
+  --bha-font-line-height-normal: 1.5;
+  --bha-font-line-height-relaxed: 1.65;
+  --bha-font-tracking-tight: -0.02em;
+  --bha-font-tracking-normal: 0em;
+  --bha-font-tracking-wide: 0.04em;
+  --bha-font-tracking-caps: 0.08em;
+  --bha-border-width-hairline: 1px;
+  --bha-border-width-thick: 2px;
+  --bha-border-width-focus: 3px;
+  --bha-elevation-0: none;
+  --bha-elevation-1: 0 1px 2px 0 rgba(0,0,102,0.08), 0 1px 3px 0 rgba(0,0,102,0.06);
+  --bha-elevation-2: 0 2px 4px -1px rgba(0,0,102,0.10), 0 4px 8px -2px rgba(0,0,102,0.08);
+  --bha-elevation-3: 0 6px 12px -4px rgba(0,0,102,0.12), 0 12px 24px -6px rgba(0,0,102,0.10);
+  --bha-elevation-4: 0 12px 24px -8px rgba(0,0,102,0.16), 0 24px 48px -12px rgba(0,0,102,0.12);
+  --bha-z-base: 0;
+  --bha-z-raised: 100;
+  --bha-z-sticky: 1100;
+  --bha-z-alert-banner: 1200;
+  --bha-z-dropdown: 1300;
+  --bha-z-overlay: 1400;
+  --bha-z-modal: 1500;
+  --bha-z-toast: 1600;
+  --bha-z-tooltip: 1700;
+  --bha-bp-xs: 360px;
+  --bha-bp-sm: 600px;
+  --bha-bp-md: 905px;
+  --bha-bp-lg: 1240px;
+  --bha-bp-xl: 1440px;
+  --bha-bp-fids: 1920px;
+  --bha-motion-duration-instant: 100ms;
+  --bha-motion-duration-fast: 150ms;
+  --bha-motion-duration-base: 250ms;
+  --bha-motion-duration-slow: 400ms;
+  --bha-motion-duration-deliberate: 600ms;
+  --bha-motion-easing-trajectory: cubic-bezier(0.2,0,0,1);
+  --bha-motion-easing-enter: cubic-bezier(0,0,0.2,1);
+  --bha-motion-easing-exit: cubic-bezier(0.4,0,1,1);
+  --bha-motion-easing-standard: cubic-bezier(0.2,0,0.2,1);
+  --bha-target-min-touch: 48px;
+  --bha-target-min-touch-dense: 44px;
+  --bha-target-row-mobile: 72px;
+  --bha-target-row-desktop: 56px;
+}
+
+/* Alto contraste — painéis FIDS, alto brilho, baixa visão.
+   Superfície no #000066 da marca; status sobem para a faixa 300. Só a semântica muda. */
+[data-theme="hc"] {
+  --bha-surface-default: var(--bha-c-primary-950);
+  --bha-surface-subtle: var(--bha-c-primary-900);
+  --bha-surface-muted: var(--bha-c-neutral-950);
+  --bha-surface-inverse: #ffffff;
+  --bha-surface-brand: var(--bha-c-primary-900);
+  --bha-surface-brand-vivid: var(--bha-c-primary-400);
+  --bha-surface-brand-subtle: var(--bha-c-primary-950);
+  --bha-surface-accent: var(--bha-c-secondary-400);
+  --bha-surface-accent-subtle: var(--bha-c-secondary-950);
+  --bha-surface-overlay: rgba(0,0,0,0.80);
+  --bha-text-default: #ffffff;
+  --bha-text-muted: var(--bha-c-primary-200);
+  --bha-text-subtle: var(--bha-c-neutral-300);
+  --bha-text-brand: var(--bha-c-primary-300);
+  --bha-text-link: var(--bha-c-primary-300);
+  --bha-text-link-hover: #ffffff;
+  --bha-text-on-brand: #ffffff;
+  --bha-text-on-inverse: var(--bha-c-primary-950);
+  --bha-text-on-accent: var(--bha-c-neutral-950);
+  --bha-text-critical: var(--bha-c-status-cancelled-300);
+  --bha-text-disabled: var(--bha-c-neutral-500);
+  --bha-border-subtle: var(--bha-c-primary-800);
+  --bha-border-default: var(--bha-c-primary-700);
+  --bha-border-strong: var(--bha-c-primary-300);
+  --bha-border-brand: var(--bha-c-primary-300);
+  --bha-border-focus: var(--bha-c-secondary-300);
+  --bha-border-critical: var(--bha-c-status-cancelled-300);
+  --bha-action-primary-bg: var(--bha-c-primary-200);
+  --bha-action-primary-bg-hover: #ffffff;
+  --bha-action-primary-bg-active: var(--bha-c-primary-100);
+  --bha-action-primary-fg: var(--bha-c-primary-950);
+  --bha-action-secondary-border: var(--bha-c-primary-300);
+  --bha-action-secondary-fg: var(--bha-c-primary-300);
+  --bha-action-secondary-bg-hover: var(--bha-c-primary-900);
+  --bha-action-ghost-fg: var(--bha-c-primary-300);
+  --bha-action-ghost-bg-hover: var(--bha-c-primary-900);
+  --bha-action-accent-bg: var(--bha-c-secondary-300);
+  --bha-action-accent-bg-hover: var(--bha-c-secondary-200);
+  --bha-action-critical-bg: var(--bha-c-status-cancelled-300);
+  --bha-action-disabled-bg: var(--bha-c-primary-800);
+  --bha-action-disabled-fg: var(--bha-c-neutral-600);
+  --bha-status-ontime-bg: var(--bha-c-primary-950);
+  --bha-status-ontime-text: var(--bha-c-status-ontime-300);
+  --bha-status-ontime-border: var(--bha-c-status-ontime-700);
+  --bha-status-ontime-solid: var(--bha-c-status-ontime-300);
+  --bha-status-ontime-on-solid: var(--bha-c-status-ontime-950);
+  --bha-status-delayed-bg: var(--bha-c-primary-950);
+  --bha-status-delayed-text: var(--bha-c-status-delayed-300);
+  --bha-status-delayed-border: var(--bha-c-status-delayed-700);
+  --bha-status-delayed-solid: var(--bha-c-status-delayed-300);
+  --bha-status-delayed-on-solid: var(--bha-c-status-delayed-950);
+  --bha-status-boarding-bg: var(--bha-c-primary-950);
+  --bha-status-boarding-text: var(--bha-c-status-boarding-300);
+  --bha-status-boarding-border: var(--bha-c-status-boarding-700);
+  --bha-status-boarding-solid: var(--bha-c-status-boarding-300);
+  --bha-status-boarding-on-solid: var(--bha-c-status-boarding-950);
+  --bha-status-lastcall-bg: var(--bha-c-primary-950);
+  --bha-status-lastcall-text: var(--bha-c-status-lastcall-300);
+  --bha-status-lastcall-border: var(--bha-c-status-lastcall-700);
+  --bha-status-lastcall-solid: var(--bha-c-status-lastcall-300);
+  --bha-status-lastcall-on-solid: var(--bha-c-status-lastcall-950);
+  --bha-status-gate-bg: var(--bha-c-primary-950);
+  --bha-status-gate-text: var(--bha-c-status-gate-300);
+  --bha-status-gate-border: var(--bha-c-status-gate-700);
+  --bha-status-gate-solid: var(--bha-c-status-gate-300);
+  --bha-status-gate-on-solid: var(--bha-c-status-gate-950);
+  --bha-status-cancelled-bg: var(--bha-c-primary-950);
+  --bha-status-cancelled-text: var(--bha-c-status-cancelled-300);
+  --bha-status-cancelled-border: var(--bha-c-status-cancelled-700);
+  --bha-status-cancelled-solid: var(--bha-c-status-cancelled-300);
+  --bha-status-cancelled-on-solid: var(--bha-c-status-cancelled-950);
+  --bha-status-landed-bg: var(--bha-c-primary-950);
+  --bha-status-landed-text: var(--bha-c-neutral-300);
+  --bha-status-landed-border: var(--bha-c-neutral-700);
+  --bha-status-landed-solid: var(--bha-c-neutral-300);
+  --bha-status-landed-on-solid: var(--bha-c-neutral-950);
+  --bha-elevation-1: 0 0 0 1px var(--bha-c-primary-700);
+  --bha-elevation-2: 0 0 0 1px var(--bha-c-primary-600);
+  --bha-elevation-3: 0 0 0 1px var(--bha-c-primary-300);
+  --bha-elevation-4: 0 0 0 2px var(--bha-c-primary-200);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bha-motion-duration-instant: 1ms;
+    --bha-motion-duration-fast: 1ms;
+    --bha-motion-duration-base: 1ms;
+    --bha-motion-duration-slow: 1ms;
+    --bha-motion-duration-deliberate: 1ms;
+  }
+}
+
+
+/* Camada base — tipografia, foco e utilidades.
+   Não é um reset global: só toca o que o sistema precisa garantir.
+   Componente NUNCA lê primitiva (--bha-c-*); só a camada semântica. */
+
+.bha-raiz {
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-sm);
+  line-height: var(--bha-font-line-height-normal);
+  color: var(--bha-text-default);
+  background: var(--bha-surface-default);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco idêntico em todo componente — o usuário aprende uma vez.
+   3px em secondary.500 com 2px de offset (WCAG 2.2 · 2.4.11). */
+.bha-foco:focus-visible,
+.bha-raiz :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--bha-border-width-focus) solid var(--bha-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--bha-radius-xs);
+}
+
+/* Dado operacional — horário, portão, voo, localizador.
+   Mono para a coluna alinhar dígito a dígito e o olho varrer na vertical. */
+.bha-dado {
+  font-family: var(--bha-font-family-data);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--bha-font-tracking-normal);
+}
+
+.bha-oculto-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Rótulo cresce por padding, nunca por largura fixa:
+   PT→ES expande até ~25% ("Comunidade Aeroportuária" / "Comunidad Aeroportuaria"). */
+.bha-rotulo-elastico {
+  width: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+
+/* Badge de status — três portadores de informação empilhados:
+   cor + forma do marcador + rótulo. Remova qualquer um e os outros dois
+   ainda comunicam (WCAG 1.4.1). É isso que faz o componente sobreviver a
+   daltonismo, monitor descalibrado e impressão em preto e branco. */
+.bha-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bha-space-2);
+  padding: var(--bha-space-1) var(--bha-space-3);
+  border: var(--bha-border-width-hairline) solid;
+  border-radius: var(--bha-radius-pill);
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-xs);
+  font-weight: var(--bha-font-weight-semibold);
+  line-height: var(--bha-font-line-height-snug);
+  white-space: nowrap;
+}
+
+/* Borda de 2px marca as DUAS urgências (última chamada, cancelado) e só elas.
+   Peso de borda é canal de informação escasso — gastá-lo em decoração o desvaloriza. */
+.bha-badge--urgente { border-width: var(--bha-border-width-thick); }
+
+.bha-badge__marcador {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: currentColor;
+}
+.bha-badge__marcador--circulo { border-radius: var(--bha-radius-pill); }
+.bha-badge__marcador--quadrado { border-radius: var(--bha-radius-xs); }
+.bha-badge__marcador--losango { border-radius: var(--bha-radius-xs); transform: rotate(45deg); }
+.bha-badge__marcador--barra { width: 3px; height: 12px; border-radius: 0; }
+
+.bha-badge--ontime    { background: var(--bha-status-ontime-bg);    color: var(--bha-status-ontime-text);    border-color: var(--bha-status-ontime-border); }
+.bha-badge--boarding  { background: var(--bha-status-boarding-bg);  color: var(--bha-status-boarding-text);  border-color: var(--bha-status-boarding-border); }
+.bha-badge--lastcall  { background: var(--bha-status-lastcall-bg);  color: var(--bha-status-lastcall-text);  border-color: var(--bha-status-lastcall-border); }
+.bha-badge--delayed   { background: var(--bha-status-delayed-bg);   color: var(--bha-status-delayed-text);   border-color: var(--bha-status-delayed-border); }
+.bha-badge--gate      { background: var(--bha-status-gate-bg);      color: var(--bha-status-gate-text);      border-color: var(--bha-status-gate-border); }
+.bha-badge--cancelled { background: var(--bha-status-cancelled-bg); color: var(--bha-status-cancelled-text); border-color: var(--bha-status-cancelled-border); }
+.bha-badge--landed    { background: var(--bha-status-landed-bg);    color: var(--bha-status-landed-text);    border-color: var(--bha-status-landed-border); }
+
+/* Única animação permitida na tabela: o pulso de "última chamada".
+   Uma vez, 600ms, e nunca em loop — alerta que pisca é ignorado em três minutos. */
+.bha-badge--pulso { animation: bha-pulso var(--bha-motion-duration-deliberate) var(--bha-motion-easing-trajectory) 1; }
+@keyframes bha-pulso {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bha-badge--pulso { animation: none; }
+}
+
+
+/* Banner de alerta operacional — o componente mais importante do sistema
+   e o menos usado. Regra que não se negocia: UM banner por vez.
+   z-index 1200: acima do sticky (a navegação não pode encobrir a interrupção),
+   abaixo do dropdown (o alerta também não bloqueia um menu já aberto). */
+.bha-alerta {
+  display: flex;
+  gap: var(--bha-space-4);
+  padding: var(--bha-space-4) var(--bha-space-5);
+  border: var(--bha-border-width-hairline) solid;
+  border-left-width: var(--bha-space-1);
+  border-radius: var(--bha-radius-sm);
+  font-family: var(--bha-font-family-ui);
+  z-index: var(--bha-z-alert-banner);
+  /* Entra deslizando; nunca pisca e nunca pulsa. */
+  animation: bha-alerta-entra var(--bha-motion-duration-slow) var(--bha-motion-easing-enter) 1;
+}
+@keyframes bha-alerta-entra {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bha-alerta { animation: none; }
+}
+
+.bha-alerta--critico     { background: var(--bha-status-cancelled-bg); border-color: var(--bha-status-cancelled-border); border-left-color: var(--bha-status-cancelled-solid); color: var(--bha-status-cancelled-text); }
+.bha-alerta--atencao     { background: var(--bha-status-delayed-bg);   border-color: var(--bha-status-delayed-border);   border-left-color: var(--bha-status-delayed-solid);   color: var(--bha-status-delayed-text); }
+.bha-alerta--informativo { background: var(--bha-surface-brand-subtle); border-color: var(--bha-border-brand); border-left-color: var(--bha-surface-brand); color: var(--bha-text-brand); }
+
+.bha-alerta__marcador { width: 12px; height: 12px; flex: none; margin-top: 5px; background: currentColor; }
+.bha-alerta__marcador--losango { border-radius: var(--bha-radius-xs); transform: rotate(45deg); }
+.bha-alerta__marcador--circulo { border-radius: var(--bha-radius-pill); }
+
+.bha-alerta__corpo { flex: 1 1 auto; min-width: 0; }
+.bha-alerta__titulo {
+  margin: 0 0 var(--bha-space-1);
+  font-size: var(--bha-font-size-md);
+  font-weight: var(--bha-font-weight-bold);
+  line-height: var(--bha-font-line-height-snug);
+}
+.bha-alerta__texto { margin: 0; font-size: var(--bha-font-size-sm); line-height: var(--bha-font-line-height-normal); }
+.bha-alerta__rodape { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bha-space-4); margin-top: var(--bha-space-3); }
+.bha-alerta__acao { color: inherit; font-weight: var(--bha-font-weight-semibold); font-size: var(--bha-font-size-sm); }
+.bha-alerta__validade { font-size: var(--bha-font-size-2xs); opacity: 0.8; }
+
+.bha-alerta__fechar {
+  flex: none;
+  width: var(--bha-target-min-touch);
+  height: var(--bha-target-min-touch);
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--bha-radius-sm);
+  color: inherit;
+  font-size: var(--bha-font-size-md);
+  cursor: pointer;
+}
+
+
+/* Botão — cinco níveis. Um primário por tela. */
+.bha-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bha-space-2);
+  min-height: var(--bha-target-min-touch);
+  padding: 0 var(--bha-space-5);
+  border: var(--bha-border-width-hairline) solid transparent;
+  border-radius: var(--bha-radius-sm);
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-sm);
+  font-weight: var(--bha-font-weight-semibold);
+  line-height: var(--bha-font-line-height-snug);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--bha-motion-duration-fast) var(--bha-motion-easing-standard),
+    border-color var(--bha-motion-duration-fast) var(--bha-motion-easing-standard);
+}
+
+/* Alturas: 48px padrão · 56px na busca (alvo mais tocado) · 40px só em barra densa de desktop */
+.bha-botao--md { min-height: var(--bha-target-min-touch); }
+.bha-botao--lg { min-height: 56px; padding: 0 var(--bha-space-6); font-size: var(--bha-font-size-md); }
+.bha-botao--sm { min-height: 40px; padding: 0 var(--bha-space-4); font-size: var(--bha-font-size-xs); }
+
+.bha-botao--largura-total { width: 100%; }
+
+.bha-botao--primaria {
+  background: var(--bha-action-primary-bg);
+  border-color: var(--bha-action-primary-bg);
+  color: var(--bha-action-primary-fg);
+}
+.bha-botao--primaria:hover:not(:disabled) {
+  background: var(--bha-action-primary-bg-hover);
+  border-color: var(--bha-action-primary-bg-hover);
+}
+.bha-botao--primaria:active:not(:disabled) {
+  background: var(--bha-action-primary-bg-active);
+  border-color: var(--bha-action-primary-bg-active);
+}
+
+.bha-botao--secundaria {
+  background: var(--bha-surface-default);
+  border-color: var(--bha-action-secondary-border);
+  color: var(--bha-action-secondary-fg);
+}
+.bha-botao--secundaria:hover:not(:disabled) { background: var(--bha-action-secondary-bg-hover); }
+
+.bha-botao--terciaria {
+  background: transparent;
+  border-color: transparent;
+  color: var(--bha-action-ghost-fg);
+}
+.bha-botao--terciaria:hover:not(:disabled) { background: var(--bha-action-ghost-bg-hover); }
+
+/* Comercial — só transação de receita (estacionamento, sala VIP, varejo).
+   Nunca "Buscar voo": encontrar o voo e vender vaga não são a mesma promessa. */
+.bha-botao--comercial {
+  background: var(--bha-action-accent-bg);
+  border-color: var(--bha-action-accent-bg);
+  color: var(--bha-text-on-accent);
+}
+.bha-botao--comercial:hover:not(:disabled) {
+  background: var(--bha-action-accent-bg-hover);
+  border-color: var(--bha-action-accent-bg-hover);
+}
+/* Anel de foco azul: o botão já é laranja, e contraste de foco vale mais que
+   consistência de cor. É a única exceção ao anel laranja global. */
+.bha-botao--comercial:focus-visible { outline-color: var(--bha-border-brand); }
+
+.bha-botao--destrutiva {
+  background: var(--bha-action-critical-bg);
+  border-color: var(--bha-action-critical-bg);
+  color: var(--bha-status-cancelled-on-solid);
+}
+.bha-botao--destrutiva:hover:not(:disabled) { filter: brightness(0.88); }
+
+.bha-botao:disabled {
+  background: var(--bha-action-disabled-bg);
+  border-color: var(--bha-action-disabled-bg);
+  color: var(--bha-action-disabled-fg);
+  cursor: not-allowed;
+}
+.bha-botao--secundaria:disabled,
+.bha-botao--terciaria:disabled {
+  background: transparent;
+  border-color: var(--bha-border-default);
+}
+
+/* Carregando: largura travada no valor de repouso antes de trocar o rótulo —
+   botão que encolhe ao carregar move o dedo do usuário. */
+.bha-botao[aria-busy="true"] {
+  opacity: 0.85;
+  cursor: progress;
+}
+
+.bha-botao__giro {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--bha-radius-pill);
+  animation: bha-girar var(--bha-motion-duration-deliberate) linear infinite;
+}
+@keyframes bha-girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .bha-botao__giro { animation: none; border-right-color: currentColor; opacity: 0.5; }
+}
+
+
+/* Ladrilho de seção — a porta de entrada do monitoramento (Pátio, Pista, Ocorrências).
+   Quadrado de cantos arredondados: alvo grande, varrível de relance, e a forma
+   distingue "entrar numa área" de "executar uma ação" (que é o Botao). */
+.bha-ladrilho {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--bha-space-4);
+  aspect-ratio: 1 / 1;
+  min-width: 140px;
+  padding: var(--bha-space-5);
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-subtle);
+  border-radius: var(--bha-radius-xl);
+  color: var(--bha-text-default);
+  font-family: var(--bha-font-family-ui);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow var(--bha-motion-duration-fast) var(--bha-motion-easing-standard),
+    border-color var(--bha-motion-duration-fast) var(--bha-motion-easing-standard);
+}
+.bha-ladrilho:hover:not([aria-disabled="true"]) { border-color: var(--bha-border-brand); box-shadow: var(--bha-elevation-2); }
+.bha-ladrilho:active:not([aria-disabled="true"]) { box-shadow: var(--bha-elevation-1); }
+
+/* Proporção quadrada só até caber: abaixo de 600px o ladrilho vira faixa horizontal,
+   senão dois deles ocupam a tela inteira e a lista de seções exige rolagem. */
+@media (max-width: 599px) {
+  .bha-ladrilho { aspect-ratio: auto; flex-direction: row; align-items: center; min-height: var(--bha-target-row-mobile); }
+  .bha-ladrilho__topo { flex-direction: row; align-items: center; gap: var(--bha-space-3); }
+}
+
+.bha-ladrilho--ativo { border-color: var(--bha-border-brand); border-width: var(--bha-border-width-thick); background: var(--bha-surface-brand-subtle); }
+.bha-ladrilho[aria-disabled="true"] { background: var(--bha-surface-muted); color: var(--bha-text-disabled); cursor: not-allowed; }
+
+.bha-ladrilho__topo { display: flex; flex-direction: column; gap: var(--bha-space-3); min-width: 0; }
+.bha-ladrilho__icone {
+  display: grid;
+  place-items: center;
+  width: var(--bha-target-min-touch);
+  height: var(--bha-target-min-touch);
+  flex: none;
+  background: var(--bha-surface-brand-subtle);
+  border-radius: var(--bha-radius-md);
+  color: var(--bha-text-brand);
+  font-size: var(--bha-font-size-md);
+}
+.bha-ladrilho--ativo .bha-ladrilho__icone { background: var(--bha-surface-brand); color: var(--bha-text-on-brand); }
+
+.bha-ladrilho__titulo { margin: 0; font-size: var(--bha-font-size-md); font-weight: var(--bha-font-weight-bold); line-height: var(--bha-font-line-height-snug); }
+.bha-ladrilho__descricao { margin: 0; color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); line-height: var(--bha-font-line-height-normal); }
+
+.bha-ladrilho__rodape { display: flex; align-items: baseline; gap: var(--bha-space-2); }
+/* Número grande em mono: é dado operacional, e a coluna de ladrilhos alinha dígito a dígito. */
+.bha-ladrilho__indicador {
+  font-family: var(--bha-font-family-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--bha-font-size-2xl);
+  font-weight: var(--bha-font-weight-bold);
+  line-height: 1;
+}
+.bha-ladrilho__unidade { color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); }
+
+/* Selo de atenção: quantas ocorrências abertas naquela área.
+   Zero NÃO renderiza — "0 pendências" é ruído competindo com o que importa. */
+.bha-ladrilho__selo {
+  position: absolute;
+  top: var(--bha-space-3);
+  right: var(--bha-space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bha-space-1);
+  min-width: var(--bha-space-6);
+  height: var(--bha-space-6);
+  padding: 0 var(--bha-space-2);
+  background: var(--bha-status-lastcall-solid);
+  border-radius: var(--bha-radius-pill);
+  color: var(--bha-status-lastcall-on-solid);
+  font-size: var(--bha-font-size-2xs);
+  font-weight: var(--bha-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* Campo — rótulo SEMPRE acima e sempre visível. Placeholder é exemplo de
+   formato, nunca rótulo: quem preenche aqui está de pé, com pressa, e o
+   teclado do celular cobre metade da tela. */
+.bha-campo { display: flex; flex-direction: column; gap: var(--bha-space-2); font-family: var(--bha-font-family-ui); }
+
+.bha-campo__rotulo {
+  font-size: var(--bha-font-size-xs);
+  font-weight: var(--bha-font-weight-semibold);
+  color: var(--bha-text-default);
+}
+.bha-campo__opcional { font-weight: var(--bha-font-weight-regular); color: var(--bha-text-subtle); }
+
+.bha-campo__controle {
+  min-height: 56px; /* preenchido em pé, com uma mão */
+  padding: 0 var(--bha-space-4);
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-default);
+  border-radius: var(--bha-radius-sm);
+  color: var(--bha-text-default);
+  font-family: inherit;
+  font-size: var(--bha-font-size-sm);
+  width: 100%;
+}
+.bha-campo__controle::placeholder { color: var(--bha-text-subtle); }
+.bha-campo__controle:hover:not(:disabled) { border-color: var(--bha-border-strong); }
+.bha-campo__controle:focus { border-color: var(--bha-border-brand); }
+
+.bha-campo--erro .bha-campo__controle    { border-color: var(--bha-border-critical); }
+.bha-campo--sucesso .bha-campo__controle { border-color: var(--bha-status-ontime-solid); }
+
+.bha-campo__controle:disabled {
+  background: var(--bha-surface-muted);
+  border-color: var(--bha-border-subtle);
+  color: var(--bha-text-muted);
+  cursor: not-allowed;
+}
+
+/* Dado operacional em campo (placa, localizador, número de voo) alinha em mono. */
+.bha-campo__controle--dado { font-family: var(--bha-font-family-data); letter-spacing: var(--bha-font-tracking-wide); }
+
+/* Auxiliar: erro = texto + ícone + borda. Três canais, porque cor sozinha exclui. */
+.bha-campo__auxiliar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bha-space-2);
+  font-size: var(--bha-font-size-xs);
+  line-height: var(--bha-font-line-height-normal);
+  color: var(--bha-text-muted);
+}
+.bha-campo--erro .bha-campo__auxiliar    { color: var(--bha-text-critical); }
+.bha-campo--sucesso .bha-campo__auxiliar { color: var(--bha-status-ontime-text); }
+
+.bha-campo__icone { width: 10px; height: 10px; flex: none; margin-top: 5px; background: currentColor; border-radius: var(--bha-radius-xs); transform: rotate(45deg); }
+
+.bha-campo__selecao { appearance: none; background-image: none; padding-right: var(--bha-space-8); }
+
+/* Área de texto — descrição de ocorrência. Altura mínima generosa: caixa de duas
+   linhas convida a escrever duas linhas, e relato de ocorrência curto demais não
+   sustenta investigação depois. */
+.bha-campo__area {
+  min-height: 120px;
+  padding: var(--bha-space-3) var(--bha-space-4);
+  line-height: var(--bha-font-line-height-normal);
+  resize: vertical;
+}
+.bha-campo__contador { align-self: flex-end; color: var(--bha-text-subtle); font-size: var(--bha-font-size-2xs); font-variant-numeric: tabular-nums; }
+.bha-campo__contador--estourou { color: var(--bha-text-critical); font-weight: var(--bha-font-weight-semibold); }
+
+/* Escolha (radio e checkbox) — a linha inteira é alvo, não só o disco de 20px. */
+.bha-escolha { display: flex; flex-direction: column; gap: var(--bha-space-2); border: 0; padding: 0; margin: 0; }
+.bha-escolha__legenda { padding: 0; font-size: var(--bha-font-size-xs); font-weight: var(--bha-font-weight-semibold); color: var(--bha-text-default); }
+.bha-escolha__opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bha-space-3);
+  min-height: var(--bha-target-min-touch);
+  padding: var(--bha-space-3) var(--bha-space-4);
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-default);
+  border-radius: var(--bha-radius-sm);
+  cursor: pointer;
+}
+.bha-escolha__opcao:hover { background: var(--bha-surface-subtle); }
+.bha-escolha__opcao:has(input:checked) { border-color: var(--bha-border-brand); background: var(--bha-surface-brand-subtle); }
+.bha-escolha__opcao:has(input:disabled) { background: var(--bha-surface-muted); color: var(--bha-text-disabled); cursor: not-allowed; }
+/* :has() é recente; sem ele a opção fica sem destaque mas continua operável,
+   e o controle nativo já mostra o estado. Degradação aceitável. */
+
+.bha-escolha__controle { width: 20px; height: 20px; flex: none; margin: 2px 0 0; accent-color: var(--bha-surface-brand); }
+.bha-escolha__texto { display: flex; flex-direction: column; gap: var(--bha-space-1); font-size: var(--bha-font-size-sm); }
+.bha-escolha__auxiliar { color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); }
+
+
+/* Card de conteúdo — mesma anatomia, proporções de imagem diferentes:
+   notícia é cena (16/9), loja é fachada (4/3), destino é paisagem (3/4). */
+.bha-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-subtle);
+  border-radius: var(--bha-radius-md);
+  overflow: hidden;
+  font-family: var(--bha-font-family-ui);
+  /* Área toda clicável, mas com UM só link acessível — no título (ver Card.tsx). */
+  position: relative;
+  transition: box-shadow var(--bha-motion-duration-fast) var(--bha-motion-easing-standard);
+}
+.bha-card:hover { box-shadow: var(--bha-elevation-2); }
+.bha-card:focus-within { box-shadow: var(--bha-elevation-2); }
+
+.bha-card__midia { display: block; width: 100%; object-fit: cover; background: var(--bha-surface-muted); }
+.bha-card--noticia .bha-card__midia { aspect-ratio: 16 / 9; }
+.bha-card--loja    .bha-card__midia { aspect-ratio: 4 / 3; }
+.bha-card--destino .bha-card__midia { aspect-ratio: 3 / 4; }
+
+.bha-card__corpo { display: flex; flex-direction: column; gap: var(--bha-space-2); padding: var(--bha-space-4); }
+.bha-card__meta { color: var(--bha-text-subtle); font-size: var(--bha-font-size-2xs); font-weight: var(--bha-font-weight-semibold); }
+.bha-card--loja .bha-card__meta, .bha-card--destino .bha-card__meta { color: var(--bha-text-brand); }
+.bha-card__titulo { margin: 0; font-size: var(--bha-font-size-md); font-weight: var(--bha-font-weight-bold); line-height: var(--bha-font-line-height-snug); }
+.bha-card__titulo a { color: var(--bha-text-default); text-decoration: none; }
+/* O pseudo-elemento estende a área de clique do link do título ao card inteiro,
+   sem criar um segundo link para o leitor de tela. */
+.bha-card__titulo a::after { content: ""; position: absolute; inset: 0; }
+.bha-card__texto { margin: 0; color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); line-height: var(--bha-font-line-height-normal); }
+.bha-card__chamada { color: var(--bha-text-link); font-size: var(--bha-font-size-xs); font-weight: var(--bha-font-weight-semibold); }
+
+
+/* Modal — z-index 1500, acima do overlay (1400) e abaixo de toast (1600):
+   uma notificação de operação precisa aparecer mesmo com modal aberto. */
+.bha-modal__fundo {
+  position: fixed;
+  inset: 0;
+  z-index: var(--bha-z-overlay);
+  display: grid;
+  place-items: center;
+  padding: var(--bha-space-4);
+  background: var(--bha-surface-overlay);
+  animation: bha-modal-fundo var(--bha-motion-duration-fast) var(--bha-motion-easing-enter) 1;
+}
+.bha-modal {
+  position: relative;
+  z-index: var(--bha-z-modal);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - var(--bha-space-8));
+  background: var(--bha-surface-default);
+  border-radius: var(--bha-radius-lg);
+  box-shadow: var(--bha-elevation-4);
+  font-family: var(--bha-font-family-ui);
+  animation: bha-modal-entra var(--bha-motion-duration-base) var(--bha-motion-easing-trajectory) 1;
+}
+.bha-modal--largo { max-width: 960px; }
+.bha-modal--tela { max-width: min(1280px, 100%); height: calc(100vh - var(--bha-space-8)); }
+
+@keyframes bha-modal-fundo { from { opacity: 0; } }
+@keyframes bha-modal-entra { from { opacity: 0; transform: translateY(8px) scale(0.99); } }
+@media (prefers-reduced-motion: reduce) {
+  .bha-modal__fundo, .bha-modal { animation: none; }
+}
+
+.bha-modal__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bha-space-4);
+  padding: var(--bha-space-5) var(--bha-space-5) var(--bha-space-3);
+}
+.bha-modal__titulo { margin: 0; font-size: var(--bha-font-size-md); font-weight: var(--bha-font-weight-bold); line-height: var(--bha-font-line-height-snug); }
+.bha-modal__descricao { margin: var(--bha-space-1) 0 0; color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); }
+
+.bha-modal__fechar {
+  flex: none;
+  width: var(--bha-target-min-touch);
+  height: var(--bha-target-min-touch);
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--bha-radius-sm);
+  color: var(--bha-text-muted);
+  font-size: var(--bha-font-size-md);
+  cursor: pointer;
+}
+.bha-modal__fechar:hover { background: var(--bha-surface-muted); color: var(--bha-text-default); }
+
+.bha-modal__corpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--bha-space-5) var(--bha-space-5); }
+.bha-modal__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--bha-space-3);
+  padding: var(--bha-space-4) var(--bha-space-5);
+  border-top: var(--bha-border-width-hairline) solid var(--bha-border-subtle);
+}
+
+/* Visualizador de foto ------------------------------------------------- */
+.bha-foto { display: flex; flex-direction: column; gap: var(--bha-space-3); min-height: 0; }
+.bha-foto__palco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  flex: 1 1 auto;
+  /* Fundo escuro em qualquer tema: foto de ocorrência é avaliada pelo que mostra,
+     e superfície clara em volta rouba contraste da imagem. */
+  background: var(--bha-surface-media);
+  border-radius: var(--bha-radius-md);
+  overflow: hidden;
+}
+.bha-foto__imagem { display: block; max-width: 100%; max-height: 60vh; object-fit: contain; }
+.bha-foto__navegar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--bha-target-min-touch);
+  height: var(--bha-target-min-touch);
+  display: grid;
+  place-items: center;
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-default);
+  border-radius: var(--bha-radius-pill);
+  color: var(--bha-text-default);
+  font-size: var(--bha-font-size-md);
+  cursor: pointer;
+}
+.bha-foto__navegar--anterior { left: var(--bha-space-3); }
+.bha-foto__navegar--proxima { right: var(--bha-space-3); }
+.bha-foto__navegar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.bha-foto__contador {
+  position: absolute;
+  bottom: var(--bha-space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--bha-space-1) var(--bha-space-3);
+  background: var(--bha-surface-default);
+  border-radius: var(--bha-radius-pill);
+  font-size: var(--bha-font-size-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Procedência: quando, onde e quem registrou. Sem isso a foto não é evidência. */
+.bha-foto__procedencia { display: flex; flex-wrap: wrap; gap: var(--bha-space-2) var(--bha-space-4); color: var(--bha-text-muted); font-size: var(--bha-font-size-2xs); }
+.bha-foto__procedencia dt { font-weight: var(--bha-font-weight-semibold); }
+.bha-foto__procedencia dd { margin: 0; }
+.bha-foto__par { display: flex; gap: var(--bha-space-1); }
+.bha-foto__legenda { margin: 0; font-size: var(--bha-font-size-sm); line-height: var(--bha-font-line-height-normal); }
+
+
+/* Abas ------------------------------------------------------------------ */
+.bha-abas__lista { display: flex; gap: var(--bha-space-1); border-bottom: var(--bha-border-width-hairline) solid var(--bha-border-subtle); }
+.bha-abas__aba {
+  min-height: var(--bha-target-min-touch);
+  padding: 0 var(--bha-space-4);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--bha-text-muted);
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-sm);
+  font-weight: var(--bha-font-weight-medium);
+  cursor: pointer;
+}
+.bha-abas__aba[aria-selected="true"] { color: var(--bha-text-brand); border-bottom-color: var(--bha-surface-brand); font-weight: var(--bha-font-weight-bold); }
+.bha-abas__painel { padding-top: var(--bha-space-4); }
+
+/* Acordeão -------------------------------------------------------------- */
+.bha-acordeao__item { border-bottom: var(--bha-border-width-hairline) solid var(--bha-border-subtle); }
+.bha-acordeao__gatilho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bha-space-4);
+  width: 100%;
+  min-height: var(--bha-target-min-touch);
+  padding: var(--bha-space-3) 0;
+  background: transparent;
+  border: 0;
+  color: var(--bha-text-default);
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-sm);
+  font-weight: var(--bha-font-weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+/* Sinal + / − em vez de seta rotativa: mais legível em caixa pequena. */
+.bha-acordeao__sinal { flex: none; color: var(--bha-text-brand); font-size: var(--bha-font-size-md); }
+.bha-acordeao__conteudo { padding: 0 0 var(--bha-space-4); color: var(--bha-text-muted); font-size: var(--bha-font-size-sm); line-height: var(--bha-font-line-height-normal); }
+
+/* Trilha (breadcrumb) --------------------------------------------------- */
+.bha-trilha { font-family: var(--bha-font-family-ui); font-size: var(--bha-font-size-xs); }
+.bha-trilha__lista { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bha-space-2); margin: 0; padding: 0; list-style: none; }
+.bha-trilha__item { display: flex; align-items: center; gap: var(--bha-space-2); color: var(--bha-text-muted); }
+.bha-trilha__item a { color: var(--bha-text-link); }
+.bha-trilha__separador { color: var(--bha-text-subtle); }
+.bha-trilha__atual { color: var(--bha-text-default); font-weight: var(--bha-font-weight-semibold); }
+
+/* Paginação ------------------------------------------------------------- */
+.bha-paginacao { display: flex; align-items: center; gap: var(--bha-space-1); font-family: var(--bha-font-family-ui); }
+.bha-paginacao__botao {
+  min-width: var(--bha-target-min-touch);
+  min-height: var(--bha-target-min-touch);
+  padding: 0 var(--bha-space-3);
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-default);
+  border-radius: var(--bha-radius-sm);
+  color: var(--bha-text-default);
+  font-size: var(--bha-font-size-sm);
+  cursor: pointer;
+}
+.bha-paginacao__botao[aria-current="page"] { background: var(--bha-surface-brand); border-color: var(--bha-surface-brand); color: var(--bha-text-on-brand); font-weight: var(--bha-font-weight-bold); }
+.bha-paginacao__botao:disabled { color: var(--bha-text-disabled); border-color: var(--bha-border-subtle); cursor: not-allowed; }
+.bha-paginacao__elipse { padding: 0 var(--bha-space-2); color: var(--bha-text-subtle); }
+
+
+/* Pilha — o único jeito de empilhar/alinhar no sistema.
+   Existe para que gap venha da escala de espaço e não de número solto: espaçamento
+   ad-hoc no app é como a escala de 4px morre, um `gap: 13px` de cada vez. */
+.bha-pilha { display: flex; min-width: 0; }
+.bha-pilha--vertical { flex-direction: column; }
+.bha-pilha--horizontal { flex-direction: row; align-items: center; }
+.bha-pilha--quebra { flex-wrap: wrap; }
+.bha-pilha--separa { justify-content: space-between; }
+.bha-pilha--inicio { align-items: flex-start; }
+.bha-pilha--fim { align-items: flex-end; }
+
+/* Divisor — separação estrutural. Cor sutil de propósito: linha forte demais
+   divide mais do que o conteúdo pede e a tela vira uma grade de caixas. */
+.bha-divisor { border: 0; border-top: var(--bha-border-width-hairline) solid var(--bha-border-subtle); margin: 0; }
+.bha-divisor--vertical { border-top: 0; border-left: var(--bha-border-width-hairline) solid var(--bha-border-subtle); align-self: stretch; }
+
+/* Esqueleto — carregamento com a MESMA grade do conteúdo real, para nada deslocar
+   quando os dados chegam. Nunca spinner: o layout já é a promessa do que vem. */
+.bha-esqueleto {
+  display: block;
+  background: var(--bha-surface-muted);
+  border-radius: var(--bha-radius-xs);
+  animation: bha-esqueleto-pulso var(--bha-motion-duration-deliberate) var(--bha-motion-easing-standard) infinite alternate;
+}
+.bha-esqueleto--texto { height: 1em; }
+.bha-esqueleto--titulo { height: 1.5em; }
+.bha-esqueleto--bloco { height: 100%; border-radius: var(--bha-radius-md); }
+@keyframes bha-esqueleto-pulso { to { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .bha-esqueleto { animation: none; } }
+
+/* Chip — filtro selecionável. É BOTÃO, não link: alterna estado, não navega. */
+.bha-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bha-space-2);
+  min-height: var(--bha-target-min-touch);
+  padding: 0 var(--bha-space-4);
+  background: var(--bha-surface-default);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-default);
+  border-radius: var(--bha-radius-pill);
+  color: var(--bha-text-default);
+  font-family: var(--bha-font-family-ui);
+  font-size: var(--bha-font-size-xs);
+  font-weight: var(--bha-font-weight-medium);
+  cursor: pointer;
+  transition: background-color var(--bha-motion-duration-fast) var(--bha-motion-easing-standard);
+}
+.bha-chip:hover:not(:disabled) { background: var(--bha-surface-subtle); }
+/* Selecionado muda fundo E peso: cor sozinha não distingue para quem não a enxerga. */
+.bha-chip[aria-pressed="true"] {
+  background: var(--bha-surface-brand);
+  border-color: var(--bha-surface-brand);
+  color: var(--bha-text-on-brand);
+  font-weight: var(--bha-font-weight-bold);
+}
+.bha-chip:disabled { color: var(--bha-text-disabled); border-color: var(--bha-border-subtle); cursor: not-allowed; }
+.bha-chip__contagem { font-variant-numeric: tabular-nums; opacity: 0.85; }
+
+
+/* Linha de voo — o coração do produto.
+   Duas âncoras de varredura: horário à esquerda (mono, 20px, sempre primeiro)
+   e status na borda direita. A leitura em movimento vai de uma à outra e
+   ignora o meio — por isso o que está no meio é o primeiro a colapsar. */
+.bha-voos { width: 100%; font-family: var(--bha-font-family-ui); }
+
+.bha-voos__tabela { width: 100%; border-collapse: collapse; }
+
+.bha-voos__cabecalho th {
+  padding: var(--bha-space-2) var(--bha-space-3);
+  border-bottom: var(--bha-border-width-thick) solid var(--bha-border-default);
+  color: var(--bha-text-subtle);
+  font-size: var(--bha-font-size-2xs);
+  font-weight: var(--bha-font-weight-semibold);
+  letter-spacing: var(--bha-font-tracking-caps);
+  text-align: left;
+  text-transform: uppercase;
+}
+.bha-voos__cabecalho th:last-child { text-align: right; }
+
+.bha-voos__linha { border-bottom: var(--bha-border-width-hairline) solid var(--bha-border-subtle); }
+.bha-voos__linha > td {
+  height: var(--bha-target-row-mobile);
+  padding: var(--bha-space-2) var(--bha-space-3);
+  font-size: var(--bha-font-size-sm);
+  vertical-align: middle;
+}
+.bha-voos__linha > td:last-child { text-align: right; }
+
+.bha-voos__linha--boarding { background: color-mix(in srgb, var(--bha-status-boarding-bg) 25%, transparent); }
+.bha-voos__linha--cancelled .bha-voos__destino,
+.bha-voos__linha--cancelled .bha-voos__codigo { text-decoration: line-through; }
+
+.bha-voos__horario {
+  font-family: var(--bha-font-family-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--bha-font-size-md);
+  font-weight: var(--bha-font-weight-semibold);
+  white-space: nowrap;
+}
+.bha-voos__codigo, .bha-voos__portao {
+  font-family: var(--bha-font-family-data);
+  font-variant-numeric: tabular-nums;
+}
+.bha-voos__destino { font-weight: var(--bha-font-weight-semibold); }
+
+/* Linha secundária: recebe os campos que a largura atual não comporta.
+   Coluna que sai NUNCA vira scroll horizontal — scroll horizontal em tabela
+   de voo é falha de acessibilidade, não solução de layout. */
+.bha-voos__secundaria {
+  display: block;
+  margin-top: var(--bha-space-1);
+  color: var(--bha-text-muted);
+  font-size: var(--bha-font-size-2xs);
+}
+.bha-voos__secundaria:empty { display: none; }
+
+/* Prioridade de colapso — sempre: horário, destino, status. */
+.bha-voos__col-md, .bha-voos__col-lg { display: none; }
+
+@media (min-width: 905px) {
+  .bha-voos__linha > td { height: var(--bha-target-row-desktop); }
+  .bha-voos__col-md { display: table-cell; }
+  .bha-voos__secundaria--md { display: none; }
+}
+@media (min-width: 1240px) {
+  .bha-voos__col-lg { display: table-cell; }
+  .bha-voos__secundaria--lg { display: none; }
+}
+
+/* Skeleton com a MESMA grade da linha real, para não deslocar nada ao carregar.
+   Sem spinner: o layout já é a promessa. */
+.bha-voos__esqueleto {
+  height: 1em;
+  background: var(--bha-surface-muted);
+  border-radius: var(--bha-radius-xs);
+  animation: bha-esqueleto var(--bha-motion-duration-deliberate) var(--bha-motion-easing-standard) infinite alternate;
+}
+@keyframes bha-esqueleto { to { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .bha-voos__esqueleto { animation: none; } }
+
+.bha-voos__aviso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bha-space-3);
+  padding: var(--bha-space-8) var(--bha-space-4);
+  text-align: left;
+}
+.bha-voos__aviso-titulo { margin: 0; font-size: var(--bha-font-size-md); font-weight: var(--bha-font-weight-semibold); }
+.bha-voos__aviso-texto { margin: 0; color: var(--bha-text-muted); font-size: var(--bha-font-size-sm); }
+
+/* Falha de atualização NUNCA apaga o dado anterior: rotula com a hora e avisa. */
+.bha-voos__desatualizado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bha-space-3);
+  padding: var(--bha-space-3) var(--bha-space-4);
+  margin-bottom: var(--bha-space-3);
+  background: var(--bha-status-delayed-bg);
+  border: var(--bha-border-width-hairline) solid var(--bha-status-delayed-border);
+  border-radius: var(--bha-radius-sm);
+  color: var(--bha-status-delayed-text);
+  font-size: var(--bha-font-size-xs);
+}
+
+/* Card de voo — a mesma informação em xs, quando não há tabela. */
+.bha-card-voo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bha-space-2);
+  padding: var(--bha-space-4);
+  border: var(--bha-border-width-hairline) solid var(--bha-border-subtle);
+  border-radius: var(--bha-radius-md);
+  background: var(--bha-surface-default);
+  font-family: var(--bha-font-family-ui);
+}
+.bha-card-voo__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--bha-space-3); }
+.bha-card-voo__destino { margin: 0; font-size: var(--bha-font-size-md); font-weight: var(--bha-font-weight-semibold); }
+.bha-card-voo__meta { margin: 0; color: var(--bha-text-muted); font-size: var(--bha-font-size-xs); }
+.bha-card-voo__rodape { display: flex; align-items: center; justify-content: space-between; gap: var(--bha-space-3); }

@@ -12,12 +12,18 @@ MVP para digitalizar inspeções de pátio, registrar não conformidades, valida
 - painel com totais, recorrências, distribuição por status e produtividade;
 - alertas de vencimento de inspeções de equipamentos;
 - trilha de auditoria das alterações.
+- mapa operacional com quadrículas, gravidade e consulta de ocorrências;
+- gestão de equipamentos com cadastro e controle de validade;
+- gestão de usuários protegida por perfil;
+- relatórios de produtividade, áreas e inspeções por dia;
+- interface adaptada aos tokens semânticos do Confins Design System.
 
 ## Tecnologias
 
 - Backend: Python 3.12, FastAPI, SQLAlchemy 2, Pydantic e JWT.
 - Banco: SQLite no desenvolvimento; PostgreSQL em produção.
 - Frontend: React 18, TypeScript e Vite.
+- Visual: tokens e folha compilada do Confins Design System, com paleta BH Airport, foco visível e responsividade.
 
 ## Execução local
 

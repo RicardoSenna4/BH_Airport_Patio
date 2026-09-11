@@ -13,6 +13,19 @@ class UserOut(BaseModel):
     role: Role
 
 
+class UserCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    email: str = Field(min_length=5, max_length=180)
+    password: str = Field(min_length=8, max_length=120)
+    role: Role
+
+
+class UserUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    role: Role | None = None
+    active: bool | None = None
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -113,6 +126,28 @@ class EquipmentOut(EquipmentCreate):
     model_config = ConfigDict(from_attributes=True)
     id: int
     active: bool
+
+
+class EquipmentUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    company: str | None = Field(default=None, min_length=1, max_length=160)
+    last_inspection: date | None = None
+    next_inspection: date | None = None
+    active: bool | None = None
+
+
+class GridCellOut(BaseModel):
+    code: str
+    row: int
+    column: str
+    occurrences: int
+    critical: int
+
+
+class ReportSummary(BaseModel):
+    inspections_by_day: dict[str, int]
+    occurrences_by_area: dict[str, int]
+    productivity_by_fiscal: dict[str, int]
 
 
 class DashboardSummary(BaseModel):

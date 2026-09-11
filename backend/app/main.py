@@ -6,7 +6,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import func, select
+from sqlalchemy import Integer, func, select
 from sqlalchemy.orm import Session, selectinload
 from starlette.staticfiles import StaticFiles
 
@@ -17,8 +17,9 @@ from .models import (
     InspectionStatus, Occurrence, OccurrenceStatus, Role, Severity, User,
 )
 from .schemas import (
-    AttachmentOut, DashboardSummary, EquipmentCreate, EquipmentOut, InspectionCreate,
-    InspectionOut, OccurrenceOut, OccurrenceTransition, Token, UserOut,
+    AttachmentOut, DashboardSummary, EquipmentCreate, EquipmentOut, EquipmentUpdate,
+    GridCellOut, InspectionCreate, InspectionOut, OccurrenceOut, OccurrenceTransition,
+    ReportSummary, Token, UserCreate, UserOut, UserUpdate,
 )
 from .security import allow_roles, create_token, current_user, hash_password, verify_password
 
@@ -79,6 +80,13 @@ def health():
 @app.get("/checklists/{inspection_type}")
 def checklist(inspection_type: str, _: User = Depends(current_user)):
     return {"type": inspection_type.upper(), "version": 1, "items": [{"item_key": key, "label": label} for key, label in CHECKLIST.get(inspection_type.upper(), CHECKLIST["PATIO"])]}
+
+
+@app.get("/grid", response_model=list[GridCellOut])
+def operational_grid(db: Session = Depends(get_db), _: User = Depends(current_user)):
+    rows = db.execute(select(Occurrence.grid_cell, func.count(Occurrence.id), func.sum(func.cast(Occurrence.severity == Severity.CRITICA, Integer))).group_by(Occurrence.grid_cell)).all()
+    counts = {code: (int(total), int(critical or 0)) for code, total, critical in rows}
+    return [GridCellOut(code=f"{column}{row}", row=row, column=column, occurrences=counts.get(f"{column}{row}", (0, 0))[0], critical=counts.get(f"{column}{row}", (0, 0))[1]) for row in range(7, 11) for column in "ABCDEF"]
 
 
 @app.post("/auth/login", response_model=Token)
@@ -238,10 +246,62 @@ def list_equipment(db: Session = Depends(get_db), _: User = Depends(current_user
     return db.scalars(select(Equipment).order_by(Equipment.next_inspection)).all()
 
 
+@app.patch("/equipment/{equipment_id}", response_model=EquipmentOut)
+def update_equipment(equipment_id: int, data: EquipmentUpdate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ANALISTA, Role.COORDENACAO, Role.ADMINISTRADOR))):
+    equipment = db.get(Equipment, equipment_id)
+    if not equipment:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(equipment, key, value)
+    audit(db, user, "equipment", equipment.id, "UPDATE")
+    db.commit()
+    db.refresh(equipment)
+    return equipment
+
+
 @app.get("/equipment/alerts", response_model=list[EquipmentOut])
 def equipment_alerts(days: int = Query(30, ge=0, le=365), db: Session = Depends(get_db), _: User = Depends(current_user)):
     limit = date.today() + timedelta(days=days)
     return db.scalars(select(Equipment).where(Equipment.active.is_(True), Equipment.next_inspection <= limit).order_by(Equipment.next_inspection)).all()
+
+
+@app.get("/users", response_model=list[UserOut])
+def list_users(db: Session = Depends(get_db), _: User = Depends(allow_roles(Role.ADMINISTRADOR, Role.COORDENACAO))):
+    return db.scalars(select(User).order_by(User.name)).all()
+
+
+@app.post("/users", response_model=UserOut, status_code=201)
+def create_user(data: UserCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+    if db.scalar(select(User).where(User.email == data.email)):
+        raise HTTPException(status_code=409, detail="E-mail já cadastrado")
+    created = User(name=data.name, email=data.email, password_hash=hash_password(data.password), role=data.role)
+    db.add(created)
+    db.flush()
+    audit(db, user, "user", created.id, "CREATE")
+    db.commit()
+    db.refresh(created)
+    return created
+
+
+@app.patch("/users/{user_id}", response_model=UserOut)
+def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.ADMINISTRADOR))):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(target, key, value)
+    audit(db, user, "user", target.id, "UPDATE")
+    db.commit()
+    db.refresh(target)
+    return target
+
+
+@app.get("/reports/summary", response_model=ReportSummary)
+def reports_summary(db: Session = Depends(get_db), _: User = Depends(current_user)):
+    daily = db.execute(select(func.strftime("%Y-%m-%d", Inspection.started_at), func.count(Inspection.id)).group_by(func.strftime("%Y-%m-%d", Inspection.started_at)).order_by(func.strftime("%Y-%m-%d", Inspection.started_at).desc()).limit(14)).all()
+    areas = db.execute(select(Inspection.apron, func.count(Occurrence.id)).join(Occurrence, Occurrence.inspection_id == Inspection.id).group_by(Inspection.apron)).all()
+    fiscal = db.execute(select(User.name, func.count(Inspection.id)).join(Inspection, Inspection.inspector_id == User.id).group_by(User.name)).all()
+    return ReportSummary(inspections_by_day={str(day): total for day, total in daily}, occurrences_by_area={area: total for area, total in areas}, productivity_by_fiscal={name: total for name, total in fiscal})
 
 
 @app.get("/dashboard/summary", response_model=DashboardSummary)
