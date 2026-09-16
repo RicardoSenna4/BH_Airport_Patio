@@ -71,7 +71,7 @@ def audit(db: Session, user: User, entity: str, entity_id: int, action: str, det
 
 
 def can_view_inspection(item: Inspection, user: User) -> bool:
-    return user.role != Role.FISCAL or item.inspector_id == user.id
+    return True
 
 
 @app.get("/health")
@@ -171,7 +171,7 @@ def _build_inspection(data: InspectionCreate, user: User) -> Inspection:
 
 
 @app.post("/inspections", response_model=InspectionOut, status_code=201)
-def create_inspection(data: InspectionCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR))):
+def create_inspection(data: InspectionCreate, db: Session = Depends(get_db), user: User = Depends(current_user)):
     inspection = _build_inspection(data, user)
     db.add(inspection)
     db.flush()
@@ -182,7 +182,7 @@ def create_inspection(data: InspectionCreate, db: Session = Depends(get_db), use
 
 
 @app.patch("/inspections/{inspection_id}", response_model=InspectionOut)
-def update_inspection(inspection_id: int, data: InspectionCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR))):
+def update_inspection(inspection_id: int, data: InspectionCreate, db: Session = Depends(get_db), user: User = Depends(current_user)):
     item = db.scalar(select(Inspection).options(selectinload(Inspection.answers)).where(Inspection.id == inspection_id))
     if not item or item.inspector_id != user.id:
         raise HTTPException(status_code=404, detail="Inspeção não encontrada")
@@ -201,8 +201,6 @@ def update_inspection(inspection_id: int, data: InspectionCreate, db: Session = 
 @app.get("/inspections", response_model=list[InspectionOut])
 def list_inspections(status_filter: InspectionStatus | None = Query(None, alias="status"), inspection_type: str | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
     query = select(Inspection).options(selectinload(Inspection.answers)).order_by(Inspection.started_at.desc())
-    if user.role == Role.FISCAL:
-        query = query.where(Inspection.inspector_id == user.id)
     if status_filter:
         query = query.where(Inspection.status == status_filter)
     if inspection_type:
@@ -219,7 +217,7 @@ def get_inspection(inspection_id: int, db: Session = Depends(get_db), user: User
 
 
 @app.post("/inspections/{inspection_id}/submit", response_model=InspectionOut)
-def submit_inspection(inspection_id: int, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR))):
+def submit_inspection(inspection_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     item = db.scalar(select(Inspection).options(selectinload(Inspection.answers)).where(Inspection.id == inspection_id, Inspection.inspector_id == user.id))
     if not item:
         raise HTTPException(status_code=404, detail="Inspeção não encontrada")

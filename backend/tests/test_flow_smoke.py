@@ -29,3 +29,19 @@ def test_inspection_flow_enforces_evidence_and_submits():
         assert submitted.status_code == 200
         occurrences = client.get('/occurrences').json()
         assert any(item['inspection_id'] == inspection_id and item['status'] == 'EM_VALIDACAO' for item in occurrences)
+
+
+def test_administrator_can_create_and_submit_inspection():
+    with TestClient(app) as client:
+        login = client.post('/auth/login', data={'username': 'administrador@aeroops.local', 'password': 'Aero@123'})
+        assert login.status_code == 200
+        client.headers['Authorization'] = f"Bearer {login.json()['access_token']}"
+        payload = {
+            'inspection_type': 'PATIO', 'apron': 'Pátio 1', 'grid_cell': '9F',
+            'shift': 'Manhã', 'weather': 'Seco',
+            'answers': [{'item_key': 'item_1', 'label': 'Organização', 'status': 'CONFORME'}],
+        }
+        created = client.post('/inspections', json=payload)
+        assert created.status_code == 201
+        submitted = client.post(f"/inspections/{created.json()['id']}/submit")
+        assert submitted.status_code == 200
