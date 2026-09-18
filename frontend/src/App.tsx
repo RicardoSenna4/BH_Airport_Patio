@@ -1,47 +1,1345 @@
-import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, Bell, ClipboardCheck, FileText, LayoutGrid, LogOut, Map, Menu, Plane, Plus, Settings, ShieldCheck, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  ClipboardCheck,
+  FileText,
+  LayoutGrid,
+  LogOut,
+  Map,
+  Menu,
+  Plane,
+  Plus,
+  Settings,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 
-type Status = 'CONFORME' | 'NAO_CONFORME' | 'NAO_APLICA';
-type Severity = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
-type Page = 'dashboard' | 'inspections' | 'inspection-new' | 'occurrences' | 'map' | 'equipment' | 'users' | 'checklists' | 'reports' | 'settings';
-type Answer = { item_key: string; label: string; status: Status; observation?: string; severity?: Severity; evidence_url?: string; grid_cell?: string };
-const checks = ['Organização geral do pátio', 'Pontes de embarque', 'Pavimento e concreto', 'Posições de aeronaves e marcações', 'Sinalização horizontal e vertical', 'Credenciais visíveis', 'Equipamentos irregulares', 'Equipamentos mínimos na posição', 'Excesso de equipamentos', 'FOD, obstáculos ou objetos soltos', 'Indícios de fauna ou risco operacional'];
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const validSeverities = new Set<Severity>(['BAIXA', 'MEDIA', 'ALTA', 'CRITICA']);
-const normalizeGrid = (value?: string) => { const match = value?.toUpperCase().match(/[A-Z][0-9]{1,2}/); return match ? match[0] : undefined; };
-const normalizeSeverity = (value?: string): Severity | undefined => validSeverities.has(value as Severity) ? value as Severity : undefined;
+type Status = "CONFORME" | "NAO_CONFORME" | "NAO_APLICA";
+type Severity = "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
+type Page =
+  | "dashboard"
+  | "inspections"
+  | "inspection-new"
+  | "occurrences"
+  | "map"
+  | "equipment"
+  | "users"
+  | "reports"
+  | "settings";
+type Answer = {
+  item_key: string;
+  label: string;
+  status: Status;
+  observation?: string;
+  severity?: Severity;
+  evidence_url?: string;
+  grid_cell?: string;
+};
+const checks = [
+  "Organização geral do pátio",
+  "Pontes de embarque",
+  "Pavimento e concreto",
+  "Posições de aeronaves e marcações",
+  "Sinalização horizontal e vertical",
+  "Credenciais visíveis",
+  "Equipamentos irregulares",
+  "Equipamentos mínimos na posição",
+  "Excesso de equipamentos",
+  "FOD, obstáculos ou objetos soltos",
+  "Indícios de fauna ou risco operacional",
+];
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const validSeverities = new Set<Severity>([
+  "BAIXA",
+  "MEDIA",
+  "ALTA",
+  "CRITICA",
+]);
+const normalizeGrid = (value?: string) => {
+  const match = value?.toUpperCase().match(/[A-Z][0-9]{1,2}/);
+  return match ? match[0] : undefined;
+};
+const normalizeSeverity = (value?: string): Severity | undefined =>
+  validSeverities.has(value as Severity) ? (value as Severity) : undefined;
 
-async function request(path: string, options: RequestInit = {}) { const token = localStorage.getItem('aeroops_token'); const headers = new Headers(options.headers); if (token) headers.set('Authorization', `Bearer ${token}`); if (options.body && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams)) headers.set('Content-Type', 'application/json'); const response = await fetch(`${API}${path}`, { ...options, headers }); if (!response.ok) { const body = await response.json().catch(() => ({})); const detail = Array.isArray(body.detail) ? body.detail.map((x: any) => x.msg || JSON.stringify(x)).join('; ') : body.detail; throw new Error(detail || 'Não foi possível concluir a operação'); } return response.status === 204 ? null : response.json(); }
+function clearSession() {
+  sessionStorage.removeItem("aeroops_user");
+}
 
-const nav = [{ id: 'dashboard', label: 'Visão geral', icon: BarChart3 }, { id: 'inspections', label: 'Inspeções', icon: ClipboardCheck }, { id: 'occurrences', label: 'Ocorrências', icon: AlertTriangle }, { id: 'map', label: 'Mapa operacional', icon: Map }, { id: 'equipment', label: 'Equipamentos', icon: Plane }, { id: 'users', label: 'Usuários', icon: Users }, { id: 'reports', label: 'Relatórios', icon: FileText }, { id: 'settings', label: 'Configurações', icon: Settings }] as const;
+function cookie(name: string) {
+  return (
+    document.cookie
+      .split("; ")
+      .find((item) => item.startsWith(`${name}=`))
+      ?.split("=")
+      .slice(1)
+      .join("=") || ""
+  );
+}
+async function request(
+  path: string,
+  options: RequestInit = {},
+  retry = true,
+): Promise<any> {
+  const headers = new Headers(options.headers);
+  const csrf = cookie("aeroops_csrf");
+  if (csrf) headers.set("X-CSRF-Token", decodeURIComponent(csrf));
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !(options.body instanceof URLSearchParams)
+  )
+    headers.set("Content-Type", "application/json");
+  const response = await fetch(`${API}${path}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
+  if (response.status === 401 && retry && !path.startsWith("/auth/")) {
+    const refreshed = await fetch(`${API}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: csrf ? { "X-CSRF-Token": decodeURIComponent(csrf) } : {},
+    });
+    if (refreshed.ok) return request(path, options, false);
+    clearSession();
+    window.location.reload();
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const detail = Array.isArray(body.detail)
+      ? body.detail.map((x: any) => x.msg || JSON.stringify(x)).join("; ")
+      : body.detail;
+    throw new Error(detail || "Não foi possível concluir a operação");
+  }
+  return response.status === 204 ? null : response.json();
+}
 
-export function App() { const [user, setUser] = useState<any>(() => JSON.parse(localStorage.getItem('aeroops_user') || 'null')); const [page, setPage] = useState<Page>('dashboard'); const [error, setError] = useState(''); const [mobile, setMobile] = useState(false); if (!user) return <Login onLogin={setUser} />; const go = (next: Page) => { setPage(next); setMobile(false); setError(''); }; const logout = () => { localStorage.clear(); setUser(null); }; return <div className="app-shell"><aside className={mobile ? 'sidebar open' : 'sidebar'}><div className="brand"><Plane size={25}/><span>AeroOps</span><button className="close-menu" onClick={() => setMobile(false)}><X/></button></div><div className="workspace"><span className="eyebrow">OPERAÇÃO</span><strong>BH Airport</strong><small>Confins · MG</small></div><nav>{nav.map(item => { const Icon = item.icon; return <button key={item.id} className={page === item.id || (page === 'inspection-new' && item.id === 'inspections') ? 'active' : ''} onClick={() => go(item.id as Page)}><Icon size={18}/><span>{item.label}</span>{item.id === 'occurrences' && <b className="nav-count">7</b>}</button>; })}</nav><div className="profile"><div className="avatar">{user.name.slice(0, 2).toUpperCase()}</div><span><strong>{user.name}</strong><small>{user.role}</small></span><button className="logout" onClick={logout} title="Sair"><LogOut size={16}/></button></div></aside><main className="content"><header className="topbar"><button className="menu-toggle" onClick={() => setMobile(true)}><Menu/></button><div><span className="breadcrumb">Operações / BH Airport</span><h1>{pageTitle(page)}</h1></div><div className="top-actions"><button className="icon-button" title="Notificações"><Bell size={18}/><i/></button></div></header>{error && <div className="banner banner-error"><AlertTriangle size={17}/><span>{error}</span><button onClick={() => setError('')}><X size={15}/></button></div>}<div className="page-body">{page === 'dashboard' && <Dashboard onNew={() => go('inspection-new')} />}{page === 'inspections' && <Inspections onNew={() => go('inspection-new')} onError={setError} />}{page === 'inspection-new' && <Inspection user={user} onError={setError} onDone={() => go('inspections')} />}{page === 'occurrences' && <Occurrences onError={setError} />}{page === 'map' && <OperationalMap onError={setError} />}{page === 'equipment' && <Equipment user={user} onError={setError} />}{page === 'users' && <UsersPage user={user} onError={setError} />}{page === 'reports' && <Reports onError={setError} />}{page === 'settings' && <SettingsPage />}</div></main></div>; }
-function pageTitle(page: Page) { return ({ dashboard: 'Visão operacional', inspections: 'Inspeções', 'inspection-new': 'Nova inspeção de pátio', occurrences: 'Ocorrências', map: 'Mapa operacional', equipment: 'Equipamentos', users: 'Usuários e acessos', reports: 'Relatórios', settings: 'Configurações' } as any)[page]; }
+const nav = [
+  { id: "dashboard", label: "Visão geral", icon: BarChart3 },
+  { id: "inspections", label: "Inspeções", icon: ClipboardCheck },
+  { id: "occurrences", label: "Ocorrências", icon: AlertTriangle },
+  { id: "map", label: "Mapa operacional", icon: Map },
+  { id: "equipment", label: "Equipamentos", icon: Plane },
+  { id: "users", label: "Usuários", icon: Users },
+  { id: "reports", label: "Relatórios", icon: FileText },
+  { id: "settings", label: "Configurações", icon: Settings },
+] as const;
 
-function Login({ onLogin }: { onLogin: (u: any) => void }) { const [email, setEmail] = useState('fiscal@aeroops.local'); const [password, setPassword] = useState('Aero@123'); const [error, setError] = useState(''); const submit = async (e: React.FormEvent) => { e.preventDefault(); try { const result = await request('/auth/login', { method: 'POST', body: new URLSearchParams({ username: email, password }) }); localStorage.setItem('aeroops_token', result.access_token); localStorage.setItem('aeroops_user', JSON.stringify(result.user)); onLogin(result.user); } catch (err: any) { setError(err.message); } }; return <div className="login-screen"><form className="login-card" onSubmit={submit}><div className="brand brand-dark"><Plane size={25}/><span>AeroOps</span></div><div><span className="eyebrow">ACESSO SEGURO</span><h1>Bem-vindo de volta</h1><p>Entre para acompanhar a operação aeroportuária.</p></div><label> E-mail <input value={email} onChange={e => setEmail(e.target.value)} type="email" required /></label><label> Senha <input value={password} onChange={e => setPassword(e.target.value)} type="password" required /></label>{error && <div className="banner banner-error">{error}</div>}<button className="button button-primary button-lg">Entrar no sistema</button><small className="login-hint">Ambiente demonstrativo · senha: Aero@123</small></form></div>; }
+export function App() {
+  const [user, setUser] = useState<any>(() =>
+    JSON.parse(sessionStorage.getItem("aeroops_user") || "null"),
+  );
+  const [page, setPage] = useState<Page>("dashboard");
+  const [error, setError] = useState("");
+  const [mobile, setMobile] = useState(false);
+  if (!user) return <Login onLogin={setUser} />;
+  const go = (next: Page) => {
+    setPage(next);
+    setMobile(false);
+    setError("");
+  };
+  const logout = async () => {
+    try {
+      await request("/auth/logout", { method: "POST" }, false);
+    } finally {
+      clearSession();
+      setUser(null);
+    }
+  };
+  return (
+    <div className="app-shell">
+      <aside className={mobile ? "sidebar open" : "sidebar"}>
+        <div className="brand">
+          <Plane size={25} />
+          <span>AeroOps</span>
+          <button className="close-menu" onClick={() => setMobile(false)}>
+            <X />
+          </button>
+        </div>
+        <div className="workspace">
+          <span className="eyebrow">OPERAÇÃO</span>
+          <strong>BH Airport</strong>
+          <small>Confins · MG</small>
+        </div>
+        <nav>
+          {nav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                className={
+                  page === item.id ||
+                  (page === "inspection-new" && item.id === "inspections")
+                    ? "active"
+                    : ""
+                }
+                onClick={() => go(item.id as Page)}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+                {item.id === "occurrences" && <b className="nav-count">7</b>}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="profile">
+          <div className="avatar">{user.name.slice(0, 2).toUpperCase()}</div>
+          <span>
+            <strong>{user.name}</strong>
+            <small>{user.role}</small>
+          </span>
+          <button className="logout" onClick={logout} title="Sair">
+            <LogOut size={16} />
+          </button>
+        </div>
+      </aside>
+      <main className="content">
+        <header className="topbar">
+          <button className="menu-toggle" onClick={() => setMobile(true)}>
+            <Menu />
+          </button>
+          <div>
+            <span className="breadcrumb">Operações / BH Airport</span>
+            <h1>{pageTitle(page)}</h1>
+          </div>
+          <div className="top-actions">
+            <button className="icon-button" title="Notificações">
+              <Bell size={18} />
+              <i />
+            </button>
+          </div>
+        </header>
+        {error && (
+          <div className="banner banner-error">
+            <AlertTriangle size={17} />
+            <span>{error}</span>
+            <button onClick={() => setError("")}>
+              <X size={15} />
+            </button>
+          </div>
+        )}
+        <div className="page-body">
+          {page === "dashboard" && (
+            <Dashboard onNew={() => go("inspection-new")} />
+          )}
+          {page === "inspections" && (
+            <Inspections
+              onNew={() => go("inspection-new")}
+              onError={setError}
+            />
+          )}
+          {page === "inspection-new" && (
+            <Inspection
+              user={user}
+              onError={setError}
+              onDone={() => go("inspections")}
+            />
+          )}
+          {page === "occurrences" && <Occurrences onError={setError} />}
+          {page === "map" && <OperationalMap onError={setError} />}
+          {page === "equipment" && <Equipment user={user} onError={setError} />}
+          {page === "users" && <UsersPage user={user} onError={setError} />}
+          {page === "reports" && <Reports onError={setError} />}
+          {page === "settings" && <SettingsPage />}
+        </div>
+      </main>
+    </div>
+  );
+}
+function pageTitle(page: Page) {
+  return (
+    {
+      dashboard: "Visão operacional",
+      inspections: "Inspeções",
+      "inspection-new": "Nova inspeção de pátio",
+      occurrences: "Ocorrências",
+      map: "Mapa operacional",
+      equipment: "Equipamentos",
+      users: "Usuários e acessos",
+      reports: "Relatórios",
+      settings: "Configurações",
+    } as any
+  )[page];
+}
 
-function Dashboard({ onNew }: { onNew: () => void }) { const [data, setData] = useState<any>(); useEffect(() => { request('/dashboard/summary').then(setData).catch(() => null); }, []); return <><div className="page-actions"><div><p className="eyebrow">QUINTA-FEIRA, 11 DE SETEMBRO DE 2026</p><p className="muted">Acompanhe os principais indicadores da operação.</p></div><button className="button button-primary" onClick={onNew}><Plus size={17}/> Nova inspeção</button></div><div className="metric-grid"><Metric label="Inspeções registradas" value={data?.inspections_total ?? '—'} trend="Todos os tipos" icon={<ClipboardCheck/>}/><Metric label="Ocorrências abertas" value={data?.occurrences_open ?? '—'} trend="Acompanhar fila" icon={<AlertTriangle/>}/><Metric label="Ocorrências críticas" value={data?.critical_open ?? '—'} trend="Ação imediata" tone="critical" icon={<ShieldCheck/>}/><Metric label="Equipamentos a vencer" value={data?.equipment_expiring_30_days ?? '—'} trend="Próximos 30 dias" icon={<Plane/>}/></div><div className="dashboard-grid"><section className="surface chart-panel"><SectionHead title="Inspeções por tipo" caption="Dados persistidos no sistema"/><div className="bars">{Object.entries(data?.inspections_by_type || {}).map(([key, value]: any) => <div className="bar-item" key={key}><div className="bar" style={{ height: `${Math.max(12, Math.min(100, Number(value) * 12))}%` }}/><strong>{value}</strong><span>{key}</span></div>)}{!data && <p className="muted">Carregando indicadores…</p>}</div></section><section className="surface"><SectionHead title="Por severidade" caption="Ocorrências registradas"/><div className="severity-list">{Object.entries(data?.occurrences_by_severity || {}).map(([key, value]: any) => <div key={key}><span className={`severity-dot ${key.toLowerCase()}`}/><span>{key}</span><strong>{value}</strong></div>)}</div></section><section className="surface full"><SectionHead title="Acesso rápido" caption="Entre diretamente nos módulos operacionais"/><div className="quick-links"><button onClick={onNew}><ClipboardCheck/><span><strong>Registrar inspeção</strong><small>Checklist de pátio, pista e equipamentos</small></span></button><button><LayoutGrid/><span><strong>Consultar mapa</strong><small>Ocorrências por quadrícula operacional</small></span></button><button><FileText/><span><strong>Gerar relatório</strong><small>Indicadores e produtividade</small></span></button></div></section></div></>; }
-function Metric({ label, value, trend, icon, tone }: any) { return <article className={`metric surface ${tone || ''}`}><div className="metric-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{trend}</small></article>; }
-function SectionHead({ title, caption, action }: any) { return <div className="section-head"><div><h2>{title}</h2>{caption && <p>{caption}</p>}</div>{action}</div>; }
+function Login({ onLogin }: { onLogin: (u: any) => void }) {
+  const [email, setEmail] = useState(
+    import.meta.env.DEV ? "fiscal@aeroops.local" : "",
+  );
+  const [password, setPassword] = useState(
+    import.meta.env.DEV ? "Aero@123" : "",
+  );
+  const [mfaCode, setMfaCode] = useState("");
+  const [error, setError] = useState("");
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const body = new URLSearchParams({ username: email, password });
+      if (mfaCode) body.set("mfa_code", mfaCode);
+      const result = await request("/auth/login", { method: "POST", body });
+      sessionStorage.setItem("aeroops_user", JSON.stringify(result.user));
+      onLogin(result.user);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+  return (
+    <div className="login-screen">
+      <form className="login-card" onSubmit={submit}>
+        <div className="brand brand-dark">
+          <Plane size={25} />
+          <span>AeroOps</span>
+        </div>
+        <div>
+          <span className="eyebrow">ACESSO SEGURO</span>
+          <h1>Bem-vindo de volta</h1>
+          <p>Entre para acompanhar a operação aeroportuária.</p>
+        </div>
+        <label>
+          E-mail
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            autoComplete="username"
+            required
+          />
+        </label>
+        <label>
+          Senha
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </label>
+        <label>
+          Código MFA{" "}
+          <input
+            value={mfaCode}
+            onChange={(e) =>
+              setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="Somente se habilitado"
+          />
+        </label>
+        {error && <div className="banner banner-error">{error}</div>}
+        <button className="button button-primary button-lg">
+          Entrar no sistema
+        </button>
+        {import.meta.env.DEV && (
+          <small className="login-hint">
+            Ambiente local de desenvolvimento
+          </small>
+        )}
+      </form>
+    </div>
+  );
+}
 
-function Inspections({ onNew, onError }: any) { const [items, setItems] = useState<any[]>([]); useEffect(() => { request('/inspections').then(setItems).catch(e => onError(e.message)); }, [onError]); return <><div className="page-actions"><div><p className="eyebrow">HISTÓRICO OPERACIONAL</p><p className="muted">Consulte rascunhos e inspeções concluídas.</p></div><button className="button button-primary" onClick={onNew}><Plus size={17}/> Nova inspeção</button></div><section className="surface table-card"><SectionHead title="Todas as inspeções" caption={`${items.length} registros disponíveis`} action={<input className="search" placeholder="Buscar protocolo…"/>}/><Table headers={['Protocolo', 'Tipo', 'Pátio', 'Status', 'Início']} rows={items.map(i => [i.protocol, i.inspection_type, i.apron, <StatusBadge value={i.status}/>, new Date(i.started_at).toLocaleString('pt-BR')])}/></section></>; }
-function Occurrences({ onError }: any) { const [items, setItems] = useState<any[]>([]); useEffect(() => { request('/occurrences').then(setItems).catch(e => onError(e.message)); }, [onError]); return <section className="surface table-card"><SectionHead title="Fila de ocorrências" caption="Validação, tratamento e encerramento operacional"/><Table headers={['ID', 'Ocorrência', 'Quadrícula', 'Gravidade', 'Status']} rows={items.map(i => [`#${i.id}`, i.title, i.grid_cell, <StatusBadge value={i.severity}/>, <StatusBadge value={i.status}/>])}/></section>; }
-function OperationalMap({ onError }: any) { const [cells, setCells] = useState<any[]>([]); const [selected, setSelected] = useState<any>(); useEffect(() => { request('/grid').then(setCells).catch(e => onError(e.message)); }, [onError]); return <><div className="page-actions"><div><p className="eyebrow">LOCALIZAÇÃO OPERACIONAL</p><p className="muted">Distribuição de ocorrências por quadrícula do sítio aeroportuário.</p></div><span className="chip">Atualização em tempo real</span></div><div className="map-layout"><section className="surface operational-map"><SectionHead title="Cloquê digital" caption="Selecione uma quadrícula para consultar detalhes"/><div className="grid-map">{cells.map(cell => <button key={cell.code} className={`${cell.critical ? 'critical-cell' : cell.occurrences ? 'warning-cell' : ''} ${selected?.code === cell.code ? 'selected-cell' : ''}`} onClick={() => setSelected(cell)}><span>{cell.code}</span>{cell.occurrences > 0 && <b>{cell.occurrences}</b>}</button>)}</div><div className="map-legend"><span><i className="legend-safe"/>Sem ocorrências</span><span><i className="legend-warning"/>Com ocorrências</span><span><i className="legend-critical"/>Crítica</span></div></section><aside className="surface map-detail">{selected ? <><span className="eyebrow">QUADRÍCULA</span><h2>{selected.code}</h2><div className="detail-number"><strong>{selected.occurrences}</strong><span>ocorrências</span></div><p>{selected.critical} ocorrência(s) crítica(s) nesta localização.</p><button className="button button-secondary">Ver ocorrências</button></> : <div className="empty-state"><Map size={28}/><strong>Selecione uma quadrícula</strong><p>Os detalhes aparecerão aqui.</p></div>}</aside></div></>; }
-function Equipment({ user, onError }: any) { const [items, setItems] = useState<any[]>([]); const [show, setShow] = useState(false); const [form, setForm] = useState({ code: '', name: '', company: '', next_inspection: '' }); const load = () => { request('/equipment').then(setItems).catch(e => onError(e.message)); }; useEffect(() => { load(); }, []); const save = async (e: React.FormEvent) => { e.preventDefault(); try { await request('/equipment', { method: 'POST', body: JSON.stringify(form) }); setShow(false); setForm({ code: '', name: '', company: '', next_inspection: '' }); load(); } catch (err: any) { onError(err.message); } }; return <><div className="page-actions"><div><p className="eyebrow">CONTROLE DE ATIVOS</p><p className="muted">Validades e equipamentos das empresas parceiras.</p></div>{['ANALISTA', 'COORDENACAO', 'ADMINISTRADOR'].includes(user.role) && <button className="button button-primary" onClick={() => setShow(true)}><Plus size={17}/> Novo equipamento</button>}</div><section className="surface table-card"><SectionHead title="Equipamentos cadastrados" caption={`${items.length} ativos monitorados`} /><Table headers={['Identificação', 'Equipamento', 'Empresa', 'Última inspeção', 'Próxima validade', 'Situação']} rows={items.map(i => [i.code, i.name, i.company, i.last_inspection || '—', i.next_inspection, <StatusBadge value={new Date(i.next_inspection) <= new Date(Date.now() + 30 * 86400000) ? 'A VENCER' : 'REGULAR'}/>])}/></section>{show && <Modal title="Novo equipamento" onClose={() => setShow(false)}><form className="modal-form" onSubmit={save}>{[['code','Identificação'],['name','Nome do equipamento'],['company','Empresa responsável'],['next_inspection','Próxima inspeção']].map(([key, label]) => <label key={key}>{label}<input value={(form as any)[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} type={key === 'next_inspection' ? 'date' : 'text'} required /></label>)}<button className="button button-primary">Cadastrar equipamento</button></form></Modal>}</>; }
-function UsersPage({ user, onError }: any) { const [items, setItems] = useState<any[]>([]); const [show, setShow] = useState(false); const [form, setForm] = useState({ name: '', email: '', password: 'Aero@123', role: 'FISCAL' }); const load = () => { request('/users').then(setItems).catch(e => onError(e.message)); }; useEffect(() => { load(); }, []); const save = async (e: React.FormEvent) => { e.preventDefault(); try { await request('/users', { method: 'POST', body: JSON.stringify(form) }); setShow(false); load(); } catch (err: any) { onError(err.message); } }; if (!['ADMINISTRADOR', 'COORDENACAO'].includes(user.role)) return <section className="surface empty-state"><Users size={36}/><h2>Acesso restrito</h2><p>Somente Coordenação e Administrador podem consultar usuários.</p></section>; return <><div className="page-actions"><div><p className="eyebrow">GOVERNANÇA E ACESSOS</p><p className="muted">Perfis e permissões do sistema operacional.</p></div>{user.role === 'ADMINISTRADOR' && <button className="button button-primary" onClick={() => setShow(true)}><Plus size={17}/> Novo usuário</button>}</div><section className="surface table-card"><SectionHead title="Usuários cadastrados" caption={`${items.length} pessoas com acesso`} /><Table headers={['Nome', 'E-mail', 'Perfil', 'Estado']} rows={items.map(i => [i.name, i.email, <StatusBadge value={i.role}/>, <StatusBadge value={i.active ? 'ATIVO' : 'INATIVO'}/>])}/></section>{show && <Modal title="Novo usuário" onClose={() => setShow(false)}><form className="modal-form" onSubmit={save}><label>Nome<input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}/></label><label>E-mail<input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}/></label><label>Perfil<select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}><option value="FISCAL">Fiscal</option><option value="SUPERVISOR">Supervisor</option><option value="ANALISTA">Analista</option><option value="COORDENACAO">Coordenação</option><option value="ADMINISTRADOR">Administrador</option></select></label><button className="button button-primary">Criar usuário</button></form></Modal>}</>; }
+function Dashboard({ onNew }: { onNew: () => void }) {
+  const [data, setData] = useState<any>();
+  useEffect(() => {
+    request("/dashboard/summary")
+      .then(setData)
+      .catch(() => null);
+  }, []);
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">QUINTA-FEIRA, 11 DE SETEMBRO DE 2026</p>
+          <p className="muted">
+            Acompanhe os principais indicadores da operação.
+          </p>
+        </div>
+        <button className="button button-primary" onClick={onNew}>
+          <Plus size={17} /> Nova inspeção
+        </button>
+      </div>
+      <div className="metric-grid">
+        <Metric
+          label="Inspeções registradas"
+          value={data?.inspections_total ?? "—"}
+          trend="Todos os tipos"
+          icon={<ClipboardCheck />}
+        />
+        <Metric
+          label="Ocorrências abertas"
+          value={data?.occurrences_open ?? "—"}
+          trend="Acompanhar fila"
+          icon={<AlertTriangle />}
+        />
+        <Metric
+          label="Ocorrências críticas"
+          value={data?.critical_open ?? "—"}
+          trend="Ação imediata"
+          tone="critical"
+          icon={<ShieldCheck />}
+        />
+        <Metric
+          label="Equipamentos a vencer"
+          value={data?.equipment_expiring_30_days ?? "—"}
+          trend="Próximos 30 dias"
+          icon={<Plane />}
+        />
+      </div>
+      <div className="dashboard-grid">
+        <section className="surface chart-panel">
+          <SectionHead
+            title="Inspeções por tipo"
+            caption="Dados persistidos no sistema"
+          />
+          <div className="bars">
+            {Object.entries(data?.inspections_by_type || {}).map(
+              ([key, value]: any) => (
+                <div className="bar-item" key={key}>
+                  <div
+                    className="bar"
+                    style={{
+                      height: `${Math.max(12, Math.min(100, Number(value) * 12))}%`,
+                    }}
+                  />
+                  <strong>{value}</strong>
+                  <span>{key}</span>
+                </div>
+              ),
+            )}
+            {!data && <p className="muted">Carregando indicadores…</p>}
+          </div>
+        </section>
+        <section className="surface">
+          <SectionHead
+            title="Por severidade"
+            caption="Ocorrências registradas"
+          />
+          <div className="severity-list">
+            {Object.entries(data?.occurrences_by_severity || {}).map(
+              ([key, value]: any) => (
+                <div key={key}>
+                  <span className={`severity-dot ${key.toLowerCase()}`} />
+                  <span>{key}</span>
+                  <strong>{value}</strong>
+                </div>
+              ),
+            )}
+          </div>
+        </section>
+        <section className="surface full">
+          <SectionHead
+            title="Acesso rápido"
+            caption="Entre diretamente nos módulos operacionais"
+          />
+          <div className="quick-links">
+            <button onClick={onNew}>
+              <ClipboardCheck />
+              <span>
+                <strong>Registrar inspeção</strong>
+                <small>Checklist de pátio, pista e equipamentos</small>
+              </span>
+            </button>
+            <button>
+              <LayoutGrid />
+              <span>
+                <strong>Consultar mapa</strong>
+                <small>Ocorrências por quadrícula operacional</small>
+              </span>
+            </button>
+            <button>
+              <FileText />
+              <span>
+                <strong>Gerar relatório</strong>
+                <small>Indicadores e produtividade</small>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}
+function Metric({ label, value, trend, icon, tone }: any) {
+  return (
+    <article className={`metric surface ${tone || ""}`}>
+      <div className="metric-icon">{icon}</div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{trend}</small>
+    </article>
+  );
+}
+function SectionHead({ title, caption, action }: any) {
+  return (
+    <div className="section-head">
+      <div>
+        <h2>{title}</h2>
+        {caption && <p>{caption}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
 
-function Reports({ onError }: any) { const [data, setData] = useState<any>(); useEffect(() => { request('/reports/summary').then(setData).catch(e => onError(e.message)); }, [onError]); return <><div className="page-actions"><div><p className="eyebrow">ANÁLISE OPERACIONAL</p><p className="muted">Indicadores para acompanhamento e tomada de decisão.</p></div><button className="button button-secondary">Exportar relatório</button></div><div className="report-grid"><ReportCard title="Produtividade por fiscal" data={data?.productivity_by_fiscal}/><ReportCard title="Ocorrências por área" data={data?.occurrences_by_area}/><ReportCard title="Inspeções por dia" data={data?.inspections_by_day}/></div></>; }
-function ReportCard({ title, data }: any) { return <section className="surface report-card"><SectionHead title={title}/>{data ? Object.entries(data).map(([key, value]: any) => <div className="report-row" key={key}><span>{key}</span><strong>{value}</strong></div>) : <p className="muted">Carregando dados…</p>}</section>; }
-function SettingsPage() { return <section className="surface settings-page"><span className="eyebrow">CONFIGURAÇÕES DO SISTEMA</span><h2>Preferências operacionais</h2><p className="muted">O design system Confins está ativo nesta aplicação. As configurações avançadas de retenção, alertas e integrações serão parametrizadas nesta área.</p><div className="setting-line"><span><strong>Interface acessível</strong><small>Contraste, foco visível e operação por teclado.</small></span><strong className="status-on">Ativo</strong></div><div className="setting-line"><span><strong>Trilha de auditoria</strong><small>Registra alterações e decisões operacionais.</small></span><strong className="status-on">Ativo</strong></div></section>; }
-const draftStore = (key: string, value?: any) => new Promise<any>(resolve => { const requestDb = indexedDB.open('aeroops-offline', 1); requestDb.onupgradeneeded = () => requestDb.result.createObjectStore('drafts'); requestDb.onsuccess = () => { const tx = requestDb.result.transaction('drafts', value === undefined ? 'readonly' : 'readwrite'); const store = tx.objectStore('drafts'); const requestValue = value === undefined ? store.get(key) : store.put(value, key); requestValue.onsuccess = () => resolve(requestValue.result); requestValue.onerror = () => resolve(undefined); }; requestDb.onerror = () => resolve(undefined); });
+function Inspections({ onNew, onError }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  useEffect(() => {
+    request("/inspections")
+      .then(setItems)
+      .catch((e) => onError(e.message));
+  }, [onError]);
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">HISTÓRICO OPERACIONAL</p>
+          <p className="muted">Consulte rascunhos e inspeções concluídas.</p>
+        </div>
+        <button className="button button-primary" onClick={onNew}>
+          <Plus size={17} /> Nova inspeção
+        </button>
+      </div>
+      <section className="surface table-card">
+        <SectionHead
+          title="Todas as inspeções"
+          caption={`${items.length} registros disponíveis`}
+          action={<input className="search" placeholder="Buscar protocolo…" />}
+        />
+        <Table
+          headers={["Protocolo", "Tipo", "Pátio", "Status", "Início"]}
+          rows={items.map((i) => [
+            i.protocol,
+            i.inspection_type,
+            i.apron,
+            <StatusBadge value={i.status} />,
+            new Date(i.started_at).toLocaleString("pt-BR"),
+          ])}
+        />
+      </section>
+    </>
+  );
+}
+function Occurrences({ onError }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  useEffect(() => {
+    request("/occurrences")
+      .then(setItems)
+      .catch((e) => onError(e.message));
+  }, [onError]);
+  return (
+    <section className="surface table-card">
+      <SectionHead
+        title="Fila de ocorrências"
+        caption="Validação, tratamento e encerramento operacional"
+      />
+      <Table
+        headers={["ID", "Ocorrência", "Quadrícula", "Gravidade", "Status"]}
+        rows={items.map((i) => [
+          `#${i.id}`,
+          i.title,
+          i.grid_cell,
+          <StatusBadge value={i.severity} />,
+          <StatusBadge value={i.status} />,
+        ])}
+      />
+    </section>
+  );
+}
+function OperationalMap({ onError }: any) {
+  const [cells, setCells] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any>();
+  useEffect(() => {
+    request("/grid")
+      .then(setCells)
+      .catch((e) => onError(e.message));
+  }, [onError]);
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">LOCALIZAÇÃO OPERACIONAL</p>
+          <p className="muted">
+            Distribuição de ocorrências por quadrícula do sítio aeroportuário.
+          </p>
+        </div>
+        <span className="chip">Atualização em tempo real</span>
+      </div>
+      <div className="map-layout">
+        <section className="surface operational-map">
+          <SectionHead
+            title="Cloquê digital"
+            caption="Selecione uma quadrícula para consultar detalhes"
+          />
+          <div className="grid-map">
+            {cells.map((cell) => (
+              <button
+                key={cell.code}
+                className={`${cell.critical ? "critical-cell" : cell.occurrences ? "warning-cell" : ""} ${selected?.code === cell.code ? "selected-cell" : ""}`}
+                onClick={() => setSelected(cell)}
+              >
+                <span>{cell.code}</span>
+                {cell.occurrences > 0 && <b>{cell.occurrences}</b>}
+              </button>
+            ))}
+          </div>
+          <div className="map-legend">
+            <span>
+              <i className="legend-safe" />
+              Sem ocorrências
+            </span>
+            <span>
+              <i className="legend-warning" />
+              Com ocorrências
+            </span>
+            <span>
+              <i className="legend-critical" />
+              Crítica
+            </span>
+          </div>
+        </section>
+        <aside className="surface map-detail">
+          {selected ? (
+            <>
+              <span className="eyebrow">QUADRÍCULA</span>
+              <h2>{selected.code}</h2>
+              <div className="detail-number">
+                <strong>{selected.occurrences}</strong>
+                <span>ocorrências</span>
+              </div>
+              <p>
+                {selected.critical} ocorrência(s) crítica(s) nesta localização.
+              </p>
+              <button className="button button-secondary">
+                Ver ocorrências
+              </button>
+            </>
+          ) : (
+            <div className="empty-state">
+              <Map size={28} />
+              <strong>Selecione uma quadrícula</strong>
+              <p>Os detalhes aparecerão aqui.</p>
+            </div>
+          )}
+        </aside>
+      </div>
+    </>
+  );
+}
+function Equipment({ user, onError }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({
+    code: "",
+    name: "",
+    company: "",
+    next_inspection: "",
+  });
+  const load = () => {
+    request("/equipment")
+      .then(setItems)
+      .catch((e) => onError(e.message));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await request("/equipment", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+      setShow(false);
+      setForm({ code: "", name: "", company: "", next_inspection: "" });
+      load();
+    } catch (err: any) {
+      onError(err.message);
+    }
+  };
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">CONTROLE DE ATIVOS</p>
+          <p className="muted">
+            Validades e equipamentos das empresas parceiras.
+          </p>
+        </div>
+        {["ANALISTA", "COORDENACAO", "ADMINISTRADOR"].includes(user.role) && (
+          <button
+            className="button button-primary"
+            onClick={() => setShow(true)}
+          >
+            <Plus size={17} /> Novo equipamento
+          </button>
+        )}
+      </div>
+      <section className="surface table-card">
+        <SectionHead
+          title="Equipamentos cadastrados"
+          caption={`${items.length} ativos monitorados`}
+        />
+        <Table
+          headers={[
+            "Identificação",
+            "Equipamento",
+            "Empresa",
+            "Última inspeção",
+            "Próxima validade",
+            "Situação",
+          ]}
+          rows={items.map((i) => [
+            i.code,
+            i.name,
+            i.company,
+            i.last_inspection || "—",
+            i.next_inspection,
+            <StatusBadge
+              value={
+                new Date(i.next_inspection) <=
+                new Date(Date.now() + 30 * 86400000)
+                  ? "A VENCER"
+                  : "REGULAR"
+              }
+            />,
+          ])}
+        />
+      </section>
+      {show && (
+        <Modal title="Novo equipamento" onClose={() => setShow(false)}>
+          <form className="modal-form" onSubmit={save}>
+            {[
+              ["code", "Identificação"],
+              ["name", "Nome do equipamento"],
+              ["company", "Empresa responsável"],
+              ["next_inspection", "Próxima inspeção"],
+            ].map(([key, label]) => (
+              <label key={key}>
+                {label}
+                <input
+                  value={(form as any)[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  type={key === "next_inspection" ? "date" : "text"}
+                  required
+                />
+              </label>
+            ))}
+            <button className="button button-primary">
+              Cadastrar equipamento
+            </button>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
+}
+function UsersPage({ user, onError }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "FISCAL",
+  });
+  const load = () => {
+    request("/users")
+      .then(setItems)
+      .catch((e) => onError(e.message));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await request("/users", { method: "POST", body: JSON.stringify(form) });
+      setShow(false);
+      setForm({ name: "", email: "", password: "", role: "FISCAL" });
+      load();
+    } catch (err: any) {
+      onError(err.message);
+    }
+  };
+  if (!["ADMINISTRADOR", "COORDENACAO"].includes(user.role))
+    return (
+      <section className="surface empty-state">
+        <Users size={36} />
+        <h2>Acesso restrito</h2>
+        <p>Somente Coordenação e Administrador podem consultar usuários.</p>
+      </section>
+    );
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">GOVERNANÇA E ACESSOS</p>
+          <p className="muted">Perfis e permissões do sistema operacional.</p>
+        </div>
+        {user.role === "ADMINISTRADOR" && (
+          <button
+            className="button button-primary"
+            onClick={() => setShow(true)}
+          >
+            <Plus size={17} /> Novo usuário
+          </button>
+        )}
+      </div>
+      <section className="surface table-card">
+        <SectionHead
+          title="Usuários cadastrados"
+          caption={`${items.length} pessoas com acesso`}
+        />
+        <Table
+          headers={["Nome", "E-mail", "Perfil", "Estado"]}
+          rows={items.map((i) => [
+            i.name,
+            i.email,
+            <StatusBadge value={i.role} />,
+            <StatusBadge value={i.active ? "ATIVO" : "INATIVO"} />,
+          ])}
+        />
+      </section>
+      {show && (
+        <Modal title="Novo usuário" onClose={() => setShow(false)}>
+          <form className="modal-form" onSubmit={save}>
+            <label>
+              Nome
+              <input
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label>
+              E-mail
+              <input
+                required
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </label>
+            <label>
+              Senha temporária
+              <input
+                required
+                minLength={15}
+                maxLength={128}
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+              <small>
+                Mínimo de 15 caracteres; frases-senha e gerenciadores são
+                recomendados.
+              </small>
+            </label>
+            <label>
+              Perfil
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+              >
+                <option value="FISCAL">Fiscal</option>
+                <option value="SUPERVISOR">Supervisor</option>
+                <option value="ANALISTA">Analista</option>
+                <option value="COORDENACAO">Coordenação</option>
+                <option value="ADMINISTRADOR">Administrador</option>
+              </select>
+            </label>
+            <button className="button button-primary">Criar usuário</button>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
+}
+function Checklists({ user, onError }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    inspection_type: "PATIO",
+    items: [
+      {
+        item_key: "item_1",
+        label: "",
+        group_name: "Operacional",
+        position: 1,
+        observation_required: true,
+        severity_required: true,
+        location_required: true,
+        evidence_required: true,
+      },
+    ],
+  });
+  const load = () => {
+    request("/checklist-templates")
+      .then(setItems)
+      .catch((e) => onError(e.message));
+  };
+  useEffect(() => {
+    load();
+  }, []);
+  const updateItem = (index: number, key: string, value: any) =>
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, [key]: value } : item,
+      ),
+    }));
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await request("/checklist-templates", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+      setShow(false);
+      load();
+    } catch (err: any) {
+      onError(err.message);
+    }
+  };
+  const changeStatus = async (id: number, status: string) => {
+    try {
+      await request(`/checklist-templates/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      load();
+    } catch (err: any) {
+      onError(err.message);
+    }
+  };
+  if (
+    ![
+      "ADMINISTRADOR",
+      "COORDENACAO",
+      "SUPERVISOR",
+      "ANALISTA",
+      "FISCAL",
+    ].includes(user.role)
+  )
+    return (
+      <section className="surface empty-state">
+        <ClipboardCheck size={36} />
+        <h2>Acesso restrito</h2>
+        <p>Seu perfil não possui acesso aos modelos de checklist.</p>
+      </section>
+    );
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">GOVERNANÇA OPERACIONAL</p>
+          <p className="muted">
+            Todos criam, submetem para revisão e acompanham o status.
+            Coordenação e Administrador editam e publicam.
+          </p>
+        </div>
+        <button className="button button-primary" onClick={() => setShow(true)}>
+          <Plus size={17} /> Criar checklist
+        </button>
+      </div>
+      <section className="surface table-card">
+        <SectionHead
+          title="Modelos cadastrados"
+          caption={`${items.length} modelos disponíveis`}
+        />
+        <Table
+          headers={["Nome", "Tipo", "Versão", "Itens", "Status", "Ações"]}
+          rows={items.map((i) => [
+            i.name,
+            i.inspection_type,
+            `v${i.version}`,
+            i.items.length,
+            <StatusBadge value={i.status} />,
+            <div className="action-group">
+              <StatusBadge value={i.status} />
+              {i.status === "RASCUNHO" && (
+                <button
+                  className="button button-secondary"
+                  onClick={() => changeStatus(i.id, "EM_REVISAO")}
+                >
+                  Submeter revisão
+                </button>
+              )}
+              {(user.role === "ADMINISTRADOR" || user.role === "COORDENACAO") &&
+                i.status === "EM_REVISAO" && (
+                  <button
+                    className="button button-primary"
+                    onClick={() => changeStatus(i.id, "PUBLICADO")}
+                  >
+                    Publicar
+                  </button>
+                )}
+            </div>,
+          ])}
+        />
+      </section>
+      {show && (
+        <Modal title="Criar modelo de checklist" onClose={() => setShow(false)}>
+          <form className="modal-form" onSubmit={save}>
+            <label>
+              Nome do checklist
+              <input
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex.: Inspeção de pátio"
+              />
+            </label>
+            <label>
+              Tipo de inspeção
+              <select
+                value={form.inspection_type}
+                onChange={(e) =>
+                  setForm({ ...form, inspection_type: e.target.value })
+                }
+              >
+                <option value="PATIO">Pátio</option>
+                <option value="PISTA">Pista</option>
+                <option value="VEICULOS">Veículos e equipamentos</option>
+                <option value="RADIO">Rádio</option>
+              </select>
+            </label>
+            <div>
+              <div className="section-head" style={{ padding: "10px 0" }}>
+                <strong>Itens de verificação</strong>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      items: [
+                        ...form.items,
+                        {
+                          item_key: `item_${form.items.length + 1}`,
+                          label: "",
+                          group_name: "Operacional",
+                          position: form.items.length + 1,
+                          observation_required: true,
+                          severity_required: true,
+                          location_required: true,
+                          evidence_required: true,
+                        },
+                      ],
+                    })
+                  }
+                >
+                  <Plus size={14} /> Adicionar item
+                </button>
+              </div>
+              {form.items.map((item, index) => (
+                <div className="checklist-builder-row" key={item.item_key}>
+                  <input
+                    required
+                    placeholder={`Item ${index + 1}`}
+                    value={item.label}
+                    onChange={(e) => updateItem(index, "label", e.target.value)}
+                  />
+                  <input
+                    placeholder="Grupo"
+                    value={item.group_name}
+                    onChange={(e) =>
+                      updateItem(index, "group_name", e.target.value)
+                    }
+                  />
+                  {form.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          items: form.items.filter((_, i) => i !== index),
+                        })
+                      }
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button className="button button-primary">
+              Salvar como rascunho
+            </button>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
+}
+function Reports({ onError }: any) {
+  const [data, setData] = useState<any>();
+  useEffect(() => {
+    request("/reports/summary")
+      .then(setData)
+      .catch((e) => onError(e.message));
+  }, [onError]);
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">ANÁLISE OPERACIONAL</p>
+          <p className="muted">
+            Indicadores para acompanhamento e tomada de decisão.
+          </p>
+        </div>
+        <button className="button button-secondary">Exportar relatório</button>
+      </div>
+      <div className="report-grid">
+        <ReportCard
+          title="Produtividade por fiscal"
+          data={data?.productivity_by_fiscal}
+        />
+        <ReportCard
+          title="Ocorrências por área"
+          data={data?.occurrences_by_area}
+        />
+        <ReportCard title="Inspeções por dia" data={data?.inspections_by_day} />
+      </div>
+    </>
+  );
+}
+function ReportCard({ title, data }: any) {
+  return (
+    <section className="surface report-card">
+      <SectionHead title={title} />
+      {data ? (
+        Object.entries(data).map(([key, value]: any) => (
+          <div className="report-row" key={key}>
+            <span>{key}</span>
+            <strong>{value}</strong>
+          </div>
+        ))
+      ) : (
+        <p className="muted">Carregando dados…</p>
+      )}
+    </section>
+  );
+}
+function SettingsPage() {
+  const [user, setUser] = useState<any>();
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [mfaSetup, setMfaSetup] = useState<any>();
+  const [mfaCode, setMfaCode] = useState("");
+  const [passwords, setPasswords] = useState({
+    current_password: "",
+    new_password: "",
+  });
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const load = () =>
+    Promise.all([request("/auth/me"), request("/auth/sessions")]).then(
+      ([me, active]) => {
+        setUser(me);
+        setSessions(active);
+      },
+    );
+  useEffect(() => {
+    load().catch((e) => setError(e.message));
+  }, []);
+  const startMfa = async () => {
+    try {
+      setError("");
+      setMfaSetup(await request("/auth/mfa/setup", { method: "POST" }));
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+  const confirmMfa = async () => {
+    try {
+      await request("/auth/mfa/confirm", {
+        method: "POST",
+        body: JSON.stringify({ code: mfaCode }),
+      });
+      setMfaSetup(undefined);
+      setMfaCode("");
+      setMessage("MFA ativado com sucesso.");
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+  const revoke = async (id: string) => {
+    try {
+      await request(`/auth/sessions/${id}`, { method: "DELETE" });
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+  const changePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      await request("/auth/password", {
+        method: "POST",
+        body: JSON.stringify(passwords),
+      });
+      clearSession();
+      window.location.reload();
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
+  return (
+    <div className="settings-grid">
+      {(message || error) && (
+        <div className={`banner ${error ? "banner-error" : ""}`}>
+          {error || message}
+        </div>
+      )}
+      <section className="surface settings-page">
+        <span className="eyebrow">AUTENTICAÇÃO</span>
+        <h2>Verificação em duas etapas</h2>
+        <p className="muted">
+          Use um aplicativo autenticador compatível com TOTP.
+        </p>
+        <div className="setting-line">
+          <span>
+            <strong>Estado do MFA</strong>
+            <small>Protege a conta mesmo se a senha for descoberta.</small>
+          </span>
+          <strong className="status-on">
+            {user?.mfa_enabled ? "Ativo" : "Inativo"}
+          </strong>
+        </div>
+        {!user?.mfa_enabled && !mfaSetup && (
+          <button className="button button-primary" onClick={startMfa}>
+            Configurar MFA
+          </button>
+        )}
+        {mfaSetup && (
+          <div className="security-form">
+            <p>Adicione manualmente esta chave no autenticador:</p>
+            <code>{mfaSetup.secret}</code>
+            <label>
+              Código de 6 dígitos
+              <input
+                inputMode="numeric"
+                value={mfaCode}
+                onChange={(e) =>
+                  setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+              />
+            </label>
+            <button
+              className="button button-primary"
+              disabled={mfaCode.length !== 6}
+              onClick={confirmMfa}
+            >
+              Confirmar ativação
+            </button>
+          </div>
+        )}
+      </section>
+      <section className="surface settings-page">
+        <span className="eyebrow">CREDENCIAL</span>
+        <h2>Alterar senha</h2>
+        <form className="security-form" onSubmit={changePassword}>
+          <label>
+            Senha atual
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={passwords.current_password}
+              onChange={(e) =>
+                setPasswords({ ...passwords, current_password: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            Nova senha
+            <input
+              type="password"
+              autoComplete="new-password"
+              minLength={15}
+              maxLength={128}
+              required
+              value={passwords.new_password}
+              onChange={(e) =>
+                setPasswords({ ...passwords, new_password: e.target.value })
+              }
+            />
+            <small>Use pelo menos 15 caracteres.</small>
+          </label>
+          <button className="button button-primary">
+            Alterar e encerrar sessões
+          </button>
+        </form>
+      </section>
+      <section className="surface settings-page settings-wide">
+        <span className="eyebrow">SESSÕES</span>
+        <h2>Dispositivos conectados</h2>
+        <p className="muted">Revogue qualquer sessão que você não reconheça.</p>
+        {sessions.map((session) => (
+          <div className="setting-line" key={session.id}>
+            <span>
+              <strong>
+                {session.user_agent || "Navegador não identificado"}
+              </strong>
+              <small>
+                {session.ip_address || "IP não registrado"} ·{" "}
+                {new Date(session.created_at).toLocaleString("pt-BR")}
+              </small>
+            </span>
+            <button
+              className="button button-secondary"
+              disabled={!!session.revoked_at}
+              onClick={() => revoke(session.id)}
+            >
+              {session.revoked_at ? "Encerrada" : "Encerrar"}
+            </button>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+const draftStore = (key: string, value?: any) =>
+  new Promise<any>((resolve) => {
+    const requestDb = indexedDB.open("aeroops-offline", 1);
+    requestDb.onupgradeneeded = () =>
+      requestDb.result.createObjectStore("drafts");
+    requestDb.onsuccess = () => {
+      const tx = requestDb.result.transaction(
+        "drafts",
+        value === undefined ? "readonly" : "readwrite",
+      );
+      const store = tx.objectStore("drafts");
+      const requestValue =
+        value === undefined ? store.get(key) : store.put(value, key);
+      requestValue.onsuccess = () => resolve(requestValue.result);
+      requestValue.onerror = () => resolve(undefined);
+    };
+    requestDb.onerror = () => resolve(undefined);
+  });
 
 function Inspection({ user, onError, onDone }: any) {
   const draftKey = `aeroops_inspection_draft_${user.id}`;
-  const initial = JSON.parse(localStorage.getItem(draftKey) || '{}');
-  const [inspectionId, setInspectionId] = useState<number | undefined>(initial.inspectionId);
-  const [protocol, setProtocol] = useState<string | undefined>(initial.protocol);
-  const [answers, setAnswers] = useState<Record<string, Answer>>(initial.answers || {});
-  const [grid, setGrid] = useState(initial.grid || '9F');
+  const initial = JSON.parse(localStorage.getItem(draftKey) || "{}");
+  const [inspectionId, setInspectionId] = useState<number | undefined>(
+    initial.inspectionId,
+  );
+  const [protocol, setProtocol] = useState<string | undefined>(
+    initial.protocol,
+  );
+  const [answers, setAnswers] = useState<Record<string, Answer>>(
+    initial.answers || {},
+  );
+  const [grid, setGrid] = useState(initial.grid || "9F");
   const [saving, setSaving] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [submitted, setSubmitted] = useState(false);
@@ -49,18 +1347,402 @@ function Inspection({ user, onError, onDone }: any) {
   const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
   const answered = Object.keys(answers).length;
   const progress = Math.round((answered / checks.length) * 100);
-  const payload = useMemo(() => ({ inspection_type: 'PATIO', apron: 'Pátio 1', grid_cell: normalizeGrid(grid), location_text: `Quadrícula ${normalizeGrid(grid) || ''}`, shift: 'Tarde', weather: 'Seco', answers: checks.map((label, i) => { const answer = answers[label] || ({ item_key: `patio_${i + 1}`, label, status: 'NAO_APLICA' as Status, grid_cell: grid }); return { ...answer, grid_cell: normalizeGrid(answer.grid_cell || grid), severity: normalizeSeverity(answer.severity) }; }) }), [answers, grid]);
-  useEffect(() => { const on = () => setOnline(true); const off = () => setOnline(false); window.addEventListener('online', on); window.addEventListener('offline', off); return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); }; }, []);
-  useEffect(() => { const draft = { inspectionId, protocol, answers, grid, savedAt: new Date().toISOString() }; localStorage.setItem(draftKey, JSON.stringify(draft)); draftStore(draftKey, draft).catch(() => undefined); }, [draftKey, inspectionId, protocol, answers, grid]);
-  const choose = (label: string, status: Status) => setAnswers(prev => ({ ...prev, [label]: { ...(prev[label] || { item_key: `patio_${checks.indexOf(label) + 1}`, label, grid_cell: grid }), status } }));
-  const update = (label: string, patch: Partial<Answer>) => setAnswers(prev => ({ ...prev, [label]: { ...(prev[label] || { item_key: `patio_${checks.indexOf(label) + 1}`, label, status: 'NAO_CONFORME', grid_cell: grid }), ...patch } }));
-  const uploadEvidence = async (label: string, file: File, targetId?: number) => { if (!targetId) { setPendingFiles(prev => ({ ...prev, [label]: file })); setAttachments(prev => ({ ...prev, [label]: file.name })); return; } const form = new FormData(); form.append('file', file); form.append('inspection_id', String(targetId)); try { const result = await request('/attachments', { method: 'POST', body: form }); update(label, { evidence_url: result.storage_path }); setAttachments(prev => ({ ...prev, [label]: result.filename })); return result.storage_path; } catch (e: any) { onError(e.message); return undefined; } };
-  const persist = async (submit = false) => { setSaving(true); try { if (!online) { if (submit) throw new Error('Sem conexão. O envio exige conexão ativa; o rascunho foi preservado neste dispositivo.'); return; } if (submit && answered !== checks.length) throw new Error('Responda todos os itens antes de enviar.'); const nextPayload: any = { ...payload, answers: payload.answers.map((answer: any) => ({ ...answer })) }; for (const [label, file] of Object.entries(pendingFiles)) { const answer = nextPayload.answers.find((item: any) => item.label === label); if (answer) answer.evidence_url = `pending://${file.name}`; } let result = inspectionId ? await request(`/inspections/${inspectionId}`, { method: 'PATCH', body: JSON.stringify(nextPayload) }) : await request('/inspections', { method: 'POST', body: JSON.stringify(nextPayload) }); setInspectionId(result.id); setProtocol(result.protocol); for (const [label, file] of Object.entries(pendingFiles)) { const evidenceUrl = await uploadEvidence(label, file, result.id); const answer = nextPayload.answers.find((item: any) => item.label === label); if (answer && evidenceUrl) answer.evidence_url = evidenceUrl; } if (Object.keys(pendingFiles).length) { result = await request(`/inspections/${result.id}`, { method: 'PATCH', body: JSON.stringify(nextPayload) }); setPendingFiles({}); } if (submit) { const sent = await request(`/inspections/${result.id}/submit`, { method: 'POST' }); setProtocol(sent.protocol); setSubmitted(true); localStorage.removeItem(draftKey); } } catch (e: any) { onError(e.message); } finally { setSaving(false); } };
-  useEffect(() => { if (online && answered > 0 && !submitted) void persist(false); }, [online]);
-  if (submitted) return <section className="surface success-card"><ShieldCheck size={52}/><span className="eyebrow">INSPEÇÃO ENVIADA</span><h2>Inspeção registrada com sucesso</h2><p>O protocolo gerado é:</p><strong className="protocol">{protocol}</strong><div className="action-group"><button className="button button-secondary" onClick={() => window.print()}><FileText size={16}/> Imprimir / salvar PDF</button><button className="button button-primary" onClick={onDone}>Voltar para inspeções</button></div></section>;
-  return <><div className="page-actions"><div><p className="eyebrow">CHECKLIST OPERACIONAL · {answered}/{checks.length} RESPONDIDOS</p><p className="muted">Responsável: {user.name} · {online ? 'Conectado' : 'Sem conexão — rascunho local ativo'}</p><div className="progress-track"><span style={{ width: `${progress}%` }}/></div></div><div className="action-group"><button className="button button-secondary" onClick={() => persist()} disabled={saving}>{saving ? 'Salvando…' : 'Salvar rascunho'}</button><button className="button button-primary" onClick={() => persist(true)} disabled={saving || !online}>Enviar inspeção</button></div></div>{protocol && <div className="draft-notice"><FileText size={16}/> Rascunho recuperado · protocolo {protocol} · salvo automaticamente neste dispositivo.</div>}<section className="surface form-card"><SectionHead title="Localização e contexto" caption="Os dados são preservados mesmo durante uma interrupção de conexão."/><div className="form-grid"><label>Pátio<select><option>Pátio 1</option><option>Pátio 2</option></select></label><label>Turno<select><option>Tarde</option><option>Manhã</option><option>Noite</option></select></label><label>Clima<select><option>Seco</option><option>Chuva</option></select></label><label>Responsável<input readOnly value={user.name}/></label></div><div className="mini-grid"><span className="eyebrow">CLOQUÊ DIGITAL</span>{Array.from({ length: 24 }, (_, i) => { const cell = `${String.fromCharCode(65 + i % 6)}${Math.floor(i / 6) + 7}`; return <button type="button" className={grid === cell ? 'selected' : ''} onClick={() => setGrid(cell)} key={cell}>{cell}</button>; })}</div></section><section className="surface checklist-card"><SectionHead title="Checklist de inspeção de pátio" caption="Itens não conformes exigem descrição, gravidade, localização e evidência."/><div className="checklist-list">{checks.map((check, i) => <div className="check-row" key={check}><div className="check-label"><span>{String(i + 1).padStart(2, '0')}</span><strong>{check}</strong></div><div className="radio-group">{(['CONFORME', 'NAO_CONFORME', 'NAO_APLICA'] as Status[]).map(s => <button type="button" className={answers[check]?.status === s ? `selected ${s}` : ''} onClick={() => choose(check, s)} key={s}>{s === 'CONFORME' ? 'Conforme' : s === 'NAO_CONFORME' ? 'Não conforme' : 'N/A'}</button>)}</div>{answers[check]?.status === 'NAO_CONFORME' && <div className="nonconformity"><textarea placeholder="Descrição obrigatória" value={answers[check]?.observation || ''} onChange={e => update(check, { observation: e.target.value })}/><select value={answers[check]?.severity || ''} onChange={e => update(check, { severity: e.target.value as Severity })}><option value="">Gravidade</option><option value="BAIXA">Baixa</option><option value="MEDIA">Média</option><option value="ALTA">Alta</option><option value="CRITICA">Crítica</option></select><input placeholder="Quadrícula" value={answers[check]?.grid_cell || grid} onChange={e => update(check, { grid_cell: e.target.value })}/><label className="file-button">{attachments[check] || 'Anexar foto/PDF'}<input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => e.target.files?.[0] && uploadEvidence(check, e.target.files[0], inspectionId)}/></label></div>}</div>)}</div></section></>;
+  const payload = useMemo(
+    () => ({
+      inspection_type: "PATIO",
+      apron: "Pátio 1",
+      grid_cell: normalizeGrid(grid),
+      location_text: `Quadrícula ${normalizeGrid(grid) || ""}`,
+      shift: "Tarde",
+      weather: "Seco",
+      answers: checks.map((label, i) => {
+        const answer = answers[label] || {
+          item_key: `patio_${i + 1}`,
+          label,
+          status: "NAO_APLICA" as Status,
+          grid_cell: grid,
+        };
+        return {
+          ...answer,
+          grid_cell: normalizeGrid(answer.grid_cell || grid),
+          severity: normalizeSeverity(answer.severity),
+        };
+      }),
+    }),
+    [answers, grid],
+  );
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  useEffect(() => {
+    const draft = {
+      inspectionId,
+      protocol,
+      answers,
+      grid,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+    draftStore(draftKey, draft).catch(() => undefined);
+  }, [draftKey, inspectionId, protocol, answers, grid]);
+  const choose = (label: string, status: Status) =>
+    setAnswers((prev) => ({
+      ...prev,
+      [label]: {
+        ...(prev[label] || {
+          item_key: `patio_${checks.indexOf(label) + 1}`,
+          label,
+          grid_cell: grid,
+        }),
+        status,
+      },
+    }));
+  const update = (label: string, patch: Partial<Answer>) =>
+    setAnswers((prev) => ({
+      ...prev,
+      [label]: {
+        ...(prev[label] || {
+          item_key: `patio_${checks.indexOf(label) + 1}`,
+          label,
+          status: "NAO_CONFORME",
+          grid_cell: grid,
+        }),
+        ...patch,
+      },
+    }));
+  const uploadEvidence = async (
+    label: string,
+    file: File,
+    targetId?: number,
+  ) => {
+    if (!targetId) {
+      setPendingFiles((prev) => ({ ...prev, [label]: file }));
+      setAttachments((prev) => ({ ...prev, [label]: file.name }));
+      return;
+    }
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const result = await request(`/attachments?inspection_id=${targetId}`, {
+        method: "POST",
+        body: form,
+      });
+      update(label, { evidence_url: result.storage_path });
+      setAttachments((prev) => ({ ...prev, [label]: result.filename }));
+      return result.storage_path;
+    } catch (e: any) {
+      onError(e.message);
+      return undefined;
+    }
+  };
+  const persist = async (submit = false) => {
+    setSaving(true);
+    try {
+      if (!online) {
+        if (submit)
+          throw new Error(
+            "Sem conexão. O envio exige conexão ativa; o rascunho foi preservado neste dispositivo.",
+          );
+        return;
+      }
+      if (submit && answered !== checks.length)
+        throw new Error("Responda todos os itens antes de enviar.");
+      const nextPayload = {
+        ...payload,
+        answers: payload.answers.map((answer) => ({ ...answer })),
+      };
+      for (const [label, file] of Object.entries(pendingFiles)) {
+        const answer = nextPayload.answers.find((item) => item.label === label);
+        if (answer) answer.evidence_url = `pending://${file.name}`;
+      }
+      let result = inspectionId
+        ? await request(`/inspections/${inspectionId}`, {
+            method: "PATCH",
+            body: JSON.stringify(nextPayload),
+          })
+        : await request("/inspections", {
+            method: "POST",
+            body: JSON.stringify(nextPayload),
+          });
+      setInspectionId(result.id);
+      setProtocol(result.protocol);
+      for (const [label, file] of Object.entries(pendingFiles)) {
+        const evidenceUrl = await uploadEvidence(label, file, result.id);
+        const answer = nextPayload.answers.find((item) => item.label === label);
+        if (answer && evidenceUrl) answer.evidence_url = evidenceUrl;
+      }
+      if (Object.keys(pendingFiles).length) {
+        result = await request(`/inspections/${result.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(nextPayload),
+        });
+        setPendingFiles({});
+      }
+      if (submit) {
+        const sent = await request(`/inspections/${result.id}/submit`, {
+          method: "POST",
+        });
+        setProtocol(sent.protocol);
+        setSubmitted(true);
+        localStorage.removeItem(draftKey);
+      }
+    } catch (e: any) {
+      onError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  useEffect(() => {
+    if (online && answered > 0 && !submitted) void persist(false);
+  }, [online]);
+  if (submitted)
+    return (
+      <section className="surface success-card">
+        <ShieldCheck size={52} />
+        <span className="eyebrow">INSPEÇÃO ENVIADA</span>
+        <h2>Inspeção registrada com sucesso</h2>
+        <p>O protocolo gerado é:</p>
+        <strong className="protocol">{protocol}</strong>
+        <div className="action-group">
+          <button
+            className="button button-secondary"
+            onClick={() => window.print()}
+          >
+            <FileText size={16} /> Imprimir / salvar PDF
+          </button>
+          <button className="button button-primary" onClick={onDone}>
+            Voltar para inspeções
+          </button>
+        </div>
+      </section>
+    );
+  return (
+    <>
+      <div className="page-actions">
+        <div>
+          <p className="eyebrow">
+            CHECKLIST OPERACIONAL · {answered}/{checks.length} RESPONDIDOS
+          </p>
+          <p className="muted">
+            Responsável: {user.name} ·{" "}
+            {online ? "Conectado" : "Sem conexão — rascunho local ativo"}
+          </p>
+          <div className="progress-track">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <div className="action-group">
+          <button
+            className="button button-secondary"
+            onClick={() => persist()}
+            disabled={saving}
+          >
+            {saving ? "Salvando…" : "Salvar rascunho"}
+          </button>
+          <button
+            className="button button-primary"
+            onClick={() => persist(true)}
+            disabled={saving || !online}
+          >
+            Enviar inspeção
+          </button>
+        </div>
+      </div>
+      {protocol && (
+        <div className="draft-notice">
+          <FileText size={16} /> Rascunho recuperado · protocolo {protocol} ·
+          salvo automaticamente neste dispositivo.
+        </div>
+      )}
+      <section className="surface form-card">
+        <SectionHead
+          title="Localização e contexto"
+          caption="Os dados são preservados mesmo durante uma interrupção de conexão."
+        />
+        <div className="form-grid">
+          <label>
+            Pátio
+            <select>
+              <option>Pátio 1</option>
+              <option>Pátio 2</option>
+            </select>
+          </label>
+          <label>
+            Turno
+            <select>
+              <option>Tarde</option>
+              <option>Manhã</option>
+              <option>Noite</option>
+            </select>
+          </label>
+          <label>
+            Clima
+            <select>
+              <option>Seco</option>
+              <option>Chuva</option>
+            </select>
+          </label>
+          <label>
+            Responsável
+            <input readOnly value={user.name} />
+          </label>
+        </div>
+        <div className="mini-grid">
+          <span className="eyebrow">CLOQUÊ DIGITAL</span>
+          {Array.from({ length: 24 }, (_, i) => {
+            const cell = `${String.fromCharCode(65 + (i % 6))}${Math.floor(i / 6) + 7}`;
+            return (
+              <button
+                type="button"
+                className={grid === cell ? "selected" : ""}
+                onClick={() => setGrid(cell)}
+                key={cell}
+              >
+                {cell}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      <section className="surface checklist-card">
+        <SectionHead
+          title="Checklist de inspeção de pátio"
+          caption="Itens não conformes exigem descrição, gravidade, localização e evidência."
+        />
+        <div className="checklist-list">
+          {checks.map((check, i) => (
+            <div className="check-row" key={check}>
+              <div className="check-label">
+                <span>{String(i + 1).padStart(2, "0")}</span>
+                <strong>{check}</strong>
+              </div>
+              <div className="radio-group">
+                {(["CONFORME", "NAO_CONFORME", "NAO_APLICA"] as Status[]).map(
+                  (s) => (
+                    <button
+                      type="button"
+                      className={
+                        answers[check]?.status === s ? `selected ${s}` : ""
+                      }
+                      onClick={() => choose(check, s)}
+                      key={s}
+                    >
+                      {s === "CONFORME"
+                        ? "Conforme"
+                        : s === "NAO_CONFORME"
+                          ? "Não conforme"
+                          : "N/A"}
+                    </button>
+                  ),
+                )}
+              </div>
+              {answers[check]?.status === "NAO_CONFORME" && (
+                <div className="nonconformity">
+                  <textarea
+                    placeholder="Descrição obrigatória"
+                    value={answers[check]?.observation || ""}
+                    onChange={(e) =>
+                      update(check, { observation: e.target.value })
+                    }
+                  />
+                  <select
+                    value={answers[check]?.severity || ""}
+                    onChange={(e) =>
+                      update(check, { severity: e.target.value as Severity })
+                    }
+                  >
+                    <option value="">Gravidade</option>
+                    <option value="BAIXA">Baixa</option>
+                    <option value="MEDIA">Média</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="CRITICA">Crítica</option>
+                  </select>
+                  <input
+                    placeholder="Quadrícula"
+                    value={answers[check]?.grid_cell || grid}
+                    onChange={(e) =>
+                      update(check, { grid_cell: e.target.value })
+                    }
+                  />
+                  <label className="file-button">
+                    {attachments[check] || "Anexar foto/PDF"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,application/pdf"
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        uploadEvidence(check, e.target.files[0], inspectionId)
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
 }
 
-function Table({ headers, rows }: any) { return <div className="table-wrap"><table><thead><tr>{headers.map((h: string) => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row: any[], i: number) => <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>) : <tr><td colSpan={headers.length}><div className="empty-state"><ClipboardCheck size={24}/><strong>Nenhum registro encontrado</strong></div></td></tr>}</tbody></table></div>; }
-function StatusBadge({ value }: { value: string }) { const label = value.replace(/_/g, ' '); return <span className={`status-badge ${value.toLowerCase()}`}>{label}</span>; }
-function Modal({ title, onClose, children }: any) { return <div className="modal-backdrop"><section className="modal"><div className="modal-head"><h2>{title}</h2><button onClick={onClose}><X/></button></div>{children}</section></div>; }
+function Table({ headers, rows }: any) {
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            {headers.map((h: string) => (
+              <th key={h}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length ? (
+            rows.map((row: any[], i: number) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  <td key={j}>{cell}</td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={headers.length}>
+                <div className="empty-state">
+                  <ClipboardCheck size={24} />
+                  <strong>Nenhum registro encontrado</strong>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function StatusBadge({ value }: { value: string }) {
+  const label = value.replace(/_/g, " ");
+  return <span className={`status-badge ${value.toLowerCase()}`}>{label}</span>;
+}
+function Modal({ title, onClose, children }: any) {
+  return (
+    <div className="modal-backdrop">
+      <section className="modal">
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button onClick={onClose}>
+            <X />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}

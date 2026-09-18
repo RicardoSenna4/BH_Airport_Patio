@@ -1,10 +1,14 @@
 import enum
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+
+def utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class Role(str, enum.Enum):
@@ -42,7 +46,6 @@ class Severity(str, enum.Enum):
     CRITICA = "CRITICA"
 
 
-
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -51,7 +54,43 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[Role] = mapped_column(Enum(Role))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime)
+    password_changed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    mfa_secret_encrypted: Mapped[str | None] = mapped_column(String(500))
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
+
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    refresh_token_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AuthThrottle(Base):
+    __tablename__ = "auth_throttles"
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    blocked_until: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class AuthEvent(Base):
+    __tablename__ = "auth_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(40), index=True)
+    outcome: Mapped[str] = mapped_column(String(20), index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    details: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
 
 class Inspection(Base):
@@ -67,7 +106,7 @@ class Inspection(Base):
     weather: Mapped[str] = mapped_column(String(60), default="Não informado")
     notes: Mapped[str | None] = mapped_column(Text)
     status: Mapped[InspectionStatus] = mapped_column(Enum(InspectionStatus), default=InspectionStatus.RASCUNHO)
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime)
     inspector: Mapped[User] = relationship()
     answers: Mapped[list["InspectionAnswer"]] = relationship(cascade="all, delete-orphan")
@@ -99,8 +138,8 @@ class Occurrence(Base):
     status: Mapped[OccurrenceStatus] = mapped_column(Enum(OccurrenceStatus), default=OccurrenceStatus.EM_VALIDACAO)
     decision_note: Mapped[str | None] = mapped_column(Text)
     assigned_to: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 class Attachment(Base):
@@ -111,8 +150,9 @@ class Attachment(Base):
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(120))
     storage_path: Mapped[str] = mapped_column(String(500))
+    storage_key: Mapped[str | None] = mapped_column(String(255), unique=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class Equipment(Base):
@@ -134,5 +174,5 @@ class AuditLog(Base):
     entity_id: Mapped[int] = mapped_column(Integer)
     action: Mapped[str] = mapped_column(String(80))
     details: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     __table_args__ = (UniqueConstraint("id", "entity", name="uq_audit_identity"),)

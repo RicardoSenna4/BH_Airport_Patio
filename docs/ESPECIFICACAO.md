@@ -148,7 +148,7 @@ No MVP implementado, as entidades centrais foram reduzidas a `users`, `inspectio
 
 - interface responsiva para celular e desktop;
 - WCAG 2.1 AA, contraste e operação sem depender apenas de cores;
-- HTTPS, JWT curto, senhas com derivação PBKDF2-SHA256 no MVP (com possibilidade de migração para Argon2) e autorização no backend;
+- HTTPS, tokens curtos vinculados a sessões revogáveis, cookies `HttpOnly`, CSRF, MFA TOTP, senhas com Argon2id e autorização no backend;
 - anexos em armazenamento de objetos, com antivírus e URL temporária;
 - logs imutáveis, backup, retenção e restauração testada;
 - LGPD: finalidade, mínimo necessário, controle de acesso e retenção;

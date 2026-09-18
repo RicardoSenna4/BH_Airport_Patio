@@ -1,64 +1,95 @@
-# AeroOps BH — MVP de Gestão Operacional Aeroportuária
+# AeroOps BH
 
-MVP para digitalizar inspeções de pátio, registrar não conformidades, validar ocorrências e acompanhar indicadores operacionais.
+Sistema de gestão operacional aeroportuária para inspeções, não conformidades, ocorrências, equipamentos, checklists e indicadores do BH Airport.
 
-## Escopo desta versão
+## Funcionalidades
 
-- perfis: Fiscal, Supervisor, Analista e Coordenação;
-- autenticação JWT e autorização por perfil;
-- inspeção de pátio com checklist, observação, quadrícula e evidências;
-- abertura automática de ocorrência para item não conforme;
-- fluxo `ABERTA → EM_VALIDACAO → VALIDADA/REJEITADA → EM_TRATAMENTO → RESOLVIDA`;
-- painel com totais, recorrências, distribuição por status e produtividade;
-- alertas de vencimento de inspeções de equipamentos;
-- trilha de auditoria das alterações.
-- mapa operacional com quadrículas, gravidade e consulta de ocorrências;
-- gestão de equipamentos com cadastro e controle de validade;
-- gestão de usuários protegida por perfil;
-- relatórios de produtividade, áreas e inspeções por dia;
-- interface adaptada aos tokens semânticos do Confins Design System.
+- inspeções com rascunho, checklist, quadrícula e evidências;
+- geração e tratamento de ocorrências por fluxo operacional;
+- perfis Fiscal, Supervisor, Analista, Coordenação e Administrador;
+- equipamentos, mapa operacional, relatórios e trilha de auditoria;
+- autenticação com Argon2id, MFA TOTP, sessões revogáveis, CSRF e rate limit;
+- API FastAPI, frontend React e persistência PostgreSQL/Supabase.
 
-## Tecnologias
+## Estrutura
 
-- Backend: Python 3.12, FastAPI, SQLAlchemy 2, Pydantic e JWT.
-- Banco: SQLite no desenvolvimento; PostgreSQL em produção.
-- Frontend: React 18, TypeScript e Vite.
-- Visual: tokens e folha compilada do Confins Design System, com paleta BH Airport, foco visível e responsividade.
+```text
+backend/
+  alembic/       migrações versionadas
+  app/           API, domínio, segurança e persistência
+  scripts/       migração legada, backup e restore
+  tests/         testes automatizados
+frontend/
+  src/           aplicação React e estilos Confins
+docs/
+  ESPECIFICACAO.md
+  TESTES.md
+  OPERACAO.md
+SECURITY.md       política e controles de segurança
+```
 
-## Execução local
+## Requisitos
+
+- Python 3.12 ou superior;
+- Node.js 22 ou superior;
+- PostgreSQL para homologação/produção;
+- `pg_dump` e `pg_restore` para os procedimentos de backup.
+
+## Desenvolvimento local
 
 ### Backend
 
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+```
+
+Ative o ambiente (`.venv\Scripts\activate` no Windows ou `source .venv/bin/activate` em Linux/macOS) e execute:
+
+```bash
+pip install -r requirements-dev.txt
+cp .env.example .env  # no Windows, use: Copy-Item .env.example .env
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
 API: `http://localhost:8000`  
-Swagger: `http://localhost:8000/docs`
+Swagger em desenvolvimento: `http://localhost:8000/docs`
 
-Usuários demonstrativos criados no primeiro início (senha `Aero@123`):
-
-- `fiscal@aeroops.local`
-- `supervisor@aeroops.local`
-- `analista@aeroops.local`
-- `coordenacao@aeroops.local`
+Com `SEED_DEMO_USERS=true`, o ambiente local cria contas `fiscal`, `supervisor`, `analista`, `coordenacao` e `administrador` no domínio `@aeroops.local`, usando a senha demonstrativa `Aero@123`. Essa configuração é bloqueada em produção.
 
 ### Frontend
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
 Interface: `http://localhost:5173`
 
+## Qualidade
+
+```bash
+cd backend
+pytest -q
+python -m pip_audit -r requirements.txt
+python -m bandit -q -r app scripts alembic -lll
+
+cd ../frontend
+npm run build
+npm audit --omit=dev
+```
+
+O CI executa testes e build em cada `push` e `pull_request`. O roteiro completo está em [docs/TESTES.md](docs/TESTES.md).
+
 ## Produção
 
-Defina `DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/aeroops`, altere `SECRET_KEY` e restrinja `CORS_ORIGINS`.
+O `.env.example` documenta as variáveis disponíveis, mas seus valores locais não são adequados para produção. Antes da publicação, siga integralmente [docs/OPERACAO.md](docs/OPERACAO.md) e [SECURITY.md](SECURITY.md). Não publique enquanto a credencial do banco anteriormente compartilhada não tiver sido rotacionada e os controles externos do Supabase não estiverem ativos.
 
-Consulte [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md) para requisitos, telas, regras e modelo de dados.
+## Documentação
+
+- [Especificação funcional e técnica](docs/ESPECIFICACAO.md)
+- [Testes e aceite](docs/TESTES.md)
+- [Operação e implantação](docs/OPERACAO.md)
+- [Política de segurança](SECURITY.md)

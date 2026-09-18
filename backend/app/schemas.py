@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .models import AnswerStatus, InspectionStatus, OccurrenceStatus, Role, Severity
 
@@ -11,13 +11,46 @@ class UserOut(BaseModel):
     name: str
     email: str
     role: Role
+    active: bool
+    mfa_enabled: bool
 
 
 class UserCreate(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     email: str = Field(min_length=5, max_length=180)
-    password: str = Field(min_length=8, max_length=120)
+    password: str = Field(min_length=15, max_length=128)
     role: Role
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, value: str) -> str:
+        normalized = value.casefold()
+        blocked = {"aero@123", "aeroops@2026!", "password", "senha123", "administrador", "qwerty123456789"}
+        if normalized in blocked or "aeroops" in normalized or "bhairport" in normalized:
+            raise ValueError("Senha comum, demonstrativa ou relacionada ao sistema não é permitida")
+        return value
+
+
+class AuthEventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    actor_id: int | None
+    event_type: str
+    outcome: str
+    ip_address: str | None
+    details: str | None
+    created_at: datetime
+
+
+class AuditLogOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    actor_id: int
+    entity: str
+    entity_id: int
+    action: str
+    details: str | None
+    created_at: datetime
 
 
 class UserUpdate(BaseModel):
@@ -28,8 +61,44 @@ class UserUpdate(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
+    expires_in: int
     token_type: str = "bearer"
     user: UserOut
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str | None = Field(default=None, min_length=20, max_length=4096)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=15, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        return UserCreate.validate_password_strength(value)
+
+
+class MfaCode(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
+
+
+class MfaSetupOut(BaseModel):
+    secret: str
+    provisioning_uri: str
+
+
+class SessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    created_at: datetime
+    expires_at: datetime
+    revoked_at: datetime | None
+    ip_address: str | None
+    user_agent: str | None
+    last_seen_at: datetime
 
 
 class AnswerCreate(BaseModel):
