@@ -7,6 +7,9 @@ type Page = 'dashboard' | 'inspections' | 'inspection-new' | 'occurrences' | 'ma
 type Answer = { item_key: string; label: string; status: Status; observation?: string; severity?: Severity; evidence_url?: string; grid_cell?: string };
 const checks = ['Organização geral do pátio', 'Pontes de embarque', 'Pavimento e concreto', 'Posições de aeronaves e marcações', 'Sinalização horizontal e vertical', 'Credenciais visíveis', 'Equipamentos irregulares', 'Equipamentos mínimos na posição', 'Excesso de equipamentos', 'FOD, obstáculos ou objetos soltos', 'Indícios de fauna ou risco operacional'];
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const validSeverities = new Set<Severity>(['BAIXA', 'MEDIA', 'ALTA', 'CRITICA']);
+const normalizeGrid = (value?: string) => { const match = value?.toUpperCase().match(/[A-Z][0-9]{1,2}/); return match ? match[0] : undefined; };
+const normalizeSeverity = (value?: string): Severity | undefined => validSeverities.has(value as Severity) ? value as Severity : undefined;
 
 async function request(path: string, options: RequestInit = {}) { const token = localStorage.getItem('aeroops_token'); const headers = new Headers(options.headers); if (token) headers.set('Authorization', `Bearer ${token}`); if (options.body && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams)) headers.set('Content-Type', 'application/json'); const response = await fetch(`${API}${path}`, { ...options, headers }); if (!response.ok) { const body = await response.json().catch(() => ({})); const detail = Array.isArray(body.detail) ? body.detail.map((x: any) => x.msg || JSON.stringify(x)).join('; ') : body.detail; throw new Error(detail || 'Não foi possível concluir a operação'); } return response.status === 204 ? null : response.json(); }
 
@@ -46,7 +49,7 @@ function Inspection({ user, onError, onDone }: any) {
   const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
   const answered = Object.keys(answers).length;
   const progress = Math.round((answered / checks.length) * 100);
-  const payload = useMemo(() => ({ inspection_type: 'PATIO', apron: 'Pátio 1', grid_cell: grid, location_text: `Quadrícula ${grid}`, shift: 'Tarde', weather: 'Seco', answers: checks.map((label, i) => answers[label] || ({ item_key: `patio_${i + 1}`, label, status: 'NAO_APLICA' as Status, grid_cell: grid })) }), [answers, grid]);
+  const payload = useMemo(() => ({ inspection_type: 'PATIO', apron: 'Pátio 1', grid_cell: normalizeGrid(grid), location_text: `Quadrícula ${normalizeGrid(grid) || ''}`, shift: 'Tarde', weather: 'Seco', answers: checks.map((label, i) => { const answer = answers[label] || ({ item_key: `patio_${i + 1}`, label, status: 'NAO_APLICA' as Status, grid_cell: grid }); return { ...answer, grid_cell: normalizeGrid(answer.grid_cell || grid), severity: normalizeSeverity(answer.severity) }; }) }), [answers, grid]);
   useEffect(() => { const on = () => setOnline(true); const off = () => setOnline(false); window.addEventListener('online', on); window.addEventListener('offline', off); return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); }; }, []);
   useEffect(() => { const draft = { inspectionId, protocol, answers, grid, savedAt: new Date().toISOString() }; localStorage.setItem(draftKey, JSON.stringify(draft)); draftStore(draftKey, draft).catch(() => undefined); }, [draftKey, inspectionId, protocol, answers, grid]);
   const choose = (label: string, status: Status) => setAnswers(prev => ({ ...prev, [label]: { ...(prev[label] || { item_key: `patio_${checks.indexOf(label) + 1}`, label, grid_cell: grid }), status } }));
