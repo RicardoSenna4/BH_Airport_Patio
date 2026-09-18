@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
+import io
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy import Integer, func, select
 from sqlalchemy.orm import Session, selectinload
 from starlette.staticfiles import StaticFiles
@@ -269,15 +271,38 @@ def transition_occurrence(occurrence_id: int, data: OccurrenceTransition, db: Se
 
 @app.post("/attachments", response_model=AttachmentOut, status_code=201)
 def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = None, occurrence_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(status_code=415, detail="Apenas imagens JPEG, PNG ou WebP são aceitas")
+    if file.content_type not in {"image/jpeg", "image/png", "application/pdf"}:
+        raise HTTPException(status_code=415, detail="Apenas JPG, JPEG, PNG ou PDF são aceitos")
     content = file.file.read()
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Arquivo excede o limite de 10 MB")
-    safe_name = f"{uuid4().hex}_{Path(file.filename or 'evidencia').name}"
+    if inspection_id:
+        inspection = db.get(Inspection, inspection_id)
+        if not inspection or not can_view_inspection(inspection, user):
+            raise HTTPException(status_code=404, detail="Inspeção não encontrada")
+        existing = db.scalars(select(Attachment).where(Attachment.inspection_id == inspection_id)).all()
+        total_bytes = sum((UPLOAD_DIR / Path(item.storage_path).name).stat().st_size for item in existing if (UPLOAD_DIR / Path(item.storage_path).name).exists())
+        if total_bytes + len(content) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="A inspeção atingiu o limite total de 50 MB em anexos")
+    stored_type = file.content_type
+    if file.content_type.startswith("image/"):
+        try:
+            image = Image.open(io.BytesIO(content))
+            image.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
+            if image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+            output = io.BytesIO()
+            image.save(output, format="JPEG", quality=82, optimize=True)
+            content, stored_type = output.getvalue(), "image/jpeg"
+            extension = ".jpg"
+        except UnidentifiedImageError:
+            raise HTTPException(status_code=415, detail="Arquivo de imagem inválido")
+    else:
+        extension = ".pdf"
+    safe_name = f"{uuid4().hex}{extension}"
     path = UPLOAD_DIR / safe_name
     path.write_bytes(content)
-    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, filename=file.filename or safe_name, content_type=file.content_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
+    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, filename=file.filename or safe_name, content_type=stored_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
     db.add(attachment)
     db.flush()
     audit(db, user, "attachment", attachment.id, "UPLOAD", attachment.filename)
