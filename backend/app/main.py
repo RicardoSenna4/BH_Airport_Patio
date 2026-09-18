@@ -8,20 +8,19 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from PIL import Image, UnidentifiedImageError
-from sqlalchemy import Integer, func, select, text
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import Integer, func, select
 from sqlalchemy.orm import Session, selectinload
 from starlette.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, SessionLocal, engine, get_db
 from .models import (
-    AnswerStatus, Attachment, AuditLog, ChecklistItem, ChecklistStatus, ChecklistTemplate,
+    AnswerStatus, Attachment, AuditLog,
     Equipment, Inspection, InspectionAnswer, InspectionStatus, Occurrence, OccurrenceStatus,
     Role, Severity, User,
 )
 from .schemas import (
-    AttachmentOut, ChecklistCreate, ChecklistOut, ChecklistStatusChange, DashboardSummary,
+    AttachmentOut, DashboardSummary,
     EquipmentCreate, EquipmentOut, EquipmentUpdate, GridCellOut, InspectionCreate,
     InspectionOut, OccurrenceOut, OccurrenceTransition, ReportSummary, Token, UserCreate,
     UserOut, UserUpdate,
@@ -60,12 +59,6 @@ def seed_users():
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(engine)
-    if engine.dialect.name == "sqlite":
-        try:
-            with engine.begin() as connection:
-                connection.execute(text("ALTER TABLE attachments ADD COLUMN checklist_id INTEGER"))
-        except OperationalError:
-            pass
     seed_users()
     yield
 
@@ -92,61 +85,6 @@ def health():
 def checklist(inspection_type: str, _: User = Depends(current_user)):
     return {"type": inspection_type.upper(), "version": 1, "items": [{"item_key": key, "label": label} for key, label in CHECKLIST.get(inspection_type.upper(), CHECKLIST["PATIO"])]}
 
-
-@app.get("/checklist-templates", response_model=list[ChecklistOut])
-def list_checklist_templates(db: Session = Depends(get_db), _: User = Depends(allow_roles(Role.ADMINISTRADOR, Role.COORDENACAO, Role.SUPERVISOR, Role.ANALISTA))):
-    return db.scalars(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).order_by(ChecklistTemplate.updated_at.desc())).all()
-
-
-@app.post("/checklist-templates", response_model=ChecklistOut, status_code=201)
-def create_checklist_template(data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR, Role.ANALISTA, Role.COORDENACAO, Role.ADMINISTRADOR))):
-    template = ChecklistTemplate(name=data.name, inspection_type=data.inspection_type.upper(), created_by=user.id, items=[ChecklistItem(**item.model_dump()) for item in data.items])
-    db.add(template)
-    db.flush()
-    audit(db, user, "checklist_template", template.id, "CREATE", f"status={ChecklistStatus.RASCUNHO.value}")
-    db.commit()
-    db.refresh(template)
-    return template
-
-
-@app.patch("/checklist-templates/{template_id}", response_model=ChecklistOut)
-def update_checklist_template(template_id: int, data: ChecklistCreate, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.COORDENACAO, Role.ADMINISTRADOR))):
-    template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
-    if not template:
-        raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
-    if template.status == ChecklistStatus.PUBLICADO:
-        raise HTTPException(status_code=409, detail="Checklist publicado é imutável; crie uma nova versão")
-    template.name, template.inspection_type = data.name, data.inspection_type.upper()
-    template.items.clear()
-    template.items.extend(ChecklistItem(**item.model_dump()) for item in data.items)
-    audit(db, user, "checklist_template", template.id, "UPDATE")
-    db.commit()
-    db.refresh(template)
-    return template
-
-
-@app.patch("/checklist-templates/{template_id}/status", response_model=ChecklistOut)
-def change_checklist_status(template_id: int, data: ChecklistStatusChange, db: Session = Depends(get_db), user: User = Depends(allow_roles(Role.FISCAL, Role.SUPERVISOR, Role.ANALISTA, Role.COORDENACAO, Role.ADMINISTRADOR))):
-    template = db.scalar(select(ChecklistTemplate).options(selectinload(ChecklistTemplate.items)).where(ChecklistTemplate.id == template_id))
-    if not template:
-        raise HTTPException(status_code=404, detail="Modelo de checklist não encontrado")
-    allowed = {
-        Role.FISCAL: {ChecklistStatus.EM_REVISAO},
-        Role.SUPERVISOR: {ChecklistStatus.EM_REVISAO},
-        Role.ANALISTA: {ChecklistStatus.EM_REVISAO},
-        Role.ADMINISTRADOR: {ChecklistStatus.RASCUNHO, ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
-        Role.COORDENACAO: {ChecklistStatus.EM_REVISAO, ChecklistStatus.PUBLICADO, ChecklistStatus.ARQUIVADO},
-    }
-    if data.status not in allowed[user.role]:
-        raise HTTPException(status_code=403, detail="Perfil sem permissão para este status")
-    if data.status == ChecklistStatus.PUBLICADO and not template.items:
-        raise HTTPException(status_code=422, detail="Checklist precisa ter ao menos um item")
-    previous = template.status.value
-    template.status = data.status
-    audit(db, user, "checklist_template", template.id, "STATUS_CHANGE", f"from={previous};to={data.status.value}")
-    db.commit()
-    db.refresh(template)
-    return template
 
 
 @app.get("/grid", response_model=list[GridCellOut])
@@ -277,7 +215,7 @@ def transition_occurrence(occurrence_id: int, data: OccurrenceTransition, db: Se
 
 
 @app.post("/attachments", response_model=AttachmentOut, status_code=201)
-def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = None, occurrence_id: int | None = None, checklist_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = None, occurrence_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
     if file.content_type not in {"image/jpeg", "image/png", "application/pdf"}:
         raise HTTPException(status_code=415, detail="Apenas JPG, JPEG, PNG ou PDF são aceitos")
     content = file.file.read()
@@ -291,14 +229,6 @@ def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = 
         total_bytes = sum((UPLOAD_DIR / Path(item.storage_path).name).stat().st_size for item in existing if (UPLOAD_DIR / Path(item.storage_path).name).exists())
         if total_bytes + len(content) > 50 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="A inspeção atingiu o limite total de 50 MB em anexos")
-    if checklist_id:
-        checklist = db.get(ChecklistTemplate, checklist_id)
-        if not checklist:
-            raise HTTPException(status_code=404, detail="Checklist não encontrado")
-        existing = db.scalars(select(Attachment).where(Attachment.checklist_id == checklist_id)).all()
-        total_bytes = sum((UPLOAD_DIR / Path(item.storage_path).name).stat().st_size for item in existing if (UPLOAD_DIR / Path(item.storage_path).name).exists())
-        if total_bytes + len(content) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=413, detail="O checklist atingiu o limite total de 50 MB em anexos")
     stored_type = file.content_type
     if file.content_type.startswith("image/"):
         try:
@@ -317,7 +247,7 @@ def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = 
     safe_name = f"{uuid4().hex}{extension}"
     path = UPLOAD_DIR / safe_name
     path.write_bytes(content)
-    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, checklist_id=checklist_id, filename=file.filename or safe_name, content_type=stored_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
+    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, filename=file.filename or safe_name, content_type=stored_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
     db.add(attachment)
     db.flush()
     audit(db, user, "attachment", attachment.id, "UPLOAD", attachment.filename)

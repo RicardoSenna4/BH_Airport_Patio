@@ -42,12 +42,6 @@ class Severity(str, enum.Enum):
     CRITICA = "CRITICA"
 
 
-class ChecklistStatus(str, enum.Enum):
-    RASCUNHO = "RASCUNHO"
-    EM_REVISAO = "EM_REVISAO"
-    PUBLICADO = "PUBLICADO"
-    ARQUIVADO = "ARQUIVADO"
-
 
 class User(Base):
     __tablename__ = "users"
@@ -58,33 +52,6 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-
-class ChecklistTemplate(Base):
-    __tablename__ = "checklist_templates"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(120))
-    inspection_type: Mapped[str] = mapped_column(String(40), index=True)
-    version: Mapped[int] = mapped_column(Integer, default=1)
-    status: Mapped[ChecklistStatus] = mapped_column(Enum(ChecklistStatus), default=ChecklistStatus.RASCUNHO, index=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    items: Mapped[list["ChecklistItem"]] = relationship(cascade="all, delete-orphan", order_by="ChecklistItem.position")
-    attachments: Mapped[list["Attachment"]] = relationship(foreign_keys="Attachment.checklist_id", cascade="all, delete-orphan")
-
-
-class ChecklistItem(Base):
-    __tablename__ = "checklist_items"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    template_id: Mapped[int] = mapped_column(ForeignKey("checklist_templates.id"), index=True)
-    item_key: Mapped[str] = mapped_column(String(80))
-    label: Mapped[str] = mapped_column(String(180))
-    group_name: Mapped[str] = mapped_column(String(100), default="Operacional")
-    position: Mapped[int] = mapped_column(Integer, default=1)
-    observation_required: Mapped[bool] = mapped_column(Boolean, default=True)
-    severity_required: Mapped[bool] = mapped_column(Boolean, default=True)
-    location_required: Mapped[bool] = mapped_column(Boolean, default=True)
-    evidence_required: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Inspection(Base):
@@ -140,7 +107,6 @@ class Attachment(Base):
     __tablename__ = "attachments"
     id: Mapped[int] = mapped_column(primary_key=True)
     occurrence_id: Mapped[int | None] = mapped_column(ForeignKey("occurrences.id"))
-    checklist_id: Mapped[int | None] = mapped_column(ForeignKey("checklist_templates.id"), index=True)
     inspection_id: Mapped[int | None] = mapped_column(ForeignKey("inspections.id"))
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(120))

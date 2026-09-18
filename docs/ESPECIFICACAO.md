@@ -81,7 +81,7 @@ O supervisor pode consultar câmera ou entrevistar envolvidos antes da decisão.
 7. **Tratamento:** classificação, empresa/condutor, pontos, prazo, comunicação, recurso e solução.
 8. **Equipamentos:** cadastro, empresa, identificação, última/próxima inspeção e situação.
 9. **Mapa operacional:** quadrículas com quantidade e gravidade das ocorrências.
-10. **Administração:** usuários, perfis, empresas, pátios, quadrículas e modelos de checklist.
+10. **Administração:** usuários, perfis, empresas, pátios e quadrículas.
 
 ## 6. Wireframe textual principal
 
@@ -106,7 +106,7 @@ O supervisor pode consultar câmera ou entrevistar envolvidos antes da decisão.
 - `users`: identidade, e-mail, hash, perfil e estado;
 - `airports`, `aprons`, `grid_cells`: estrutura e mapa operacional;
 - `inspections`: protocolo, fiscal, local, turno, clima, estado e datas;
-- `checklist_templates`, `checklist_items`: versão dos formulários;
+- checklist operacional: itens definidos para o fluxo de inspeção;
 - `inspection_answers`: resposta, observação e vínculo ao item;
 - `occurrences`: origem, classificação, gravidade, estado e responsável;
 - `attachments`: arquivo, tipo, hash, autor e data;

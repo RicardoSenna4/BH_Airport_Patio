@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .models import AnswerStatus, ChecklistStatus, InspectionStatus, OccurrenceStatus, Role, Severity
+from .models import AnswerStatus, InspectionStatus, OccurrenceStatus, Role, Severity
 
 
 class UserOut(BaseModel):
@@ -150,37 +150,6 @@ class ReportSummary(BaseModel):
     productivity_by_fiscal: dict[str, int]
 
 
-class ChecklistItemInput(BaseModel):
-    item_key: str = Field(min_length=1, max_length=80)
-    label: str = Field(min_length=2, max_length=180)
-    group_name: str = Field(default="Operacional", min_length=2, max_length=100)
-    position: int = Field(default=1, ge=1)
-    observation_required: bool = True
-    severity_required: bool = True
-    location_required: bool = True
-    evidence_required: bool = True
-
-
-class ChecklistCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=120)
-    inspection_type: str = Field(min_length=2, max_length=40)
-    items: list[ChecklistItemInput] = Field(min_length=1)
-
-
-class ChecklistOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    name: str
-    inspection_type: str
-    version: int
-    status: ChecklistStatus
-    created_by: int
-    items: list[ChecklistItemInput]
-
-
-class ChecklistStatusChange(BaseModel):
-    status: ChecklistStatus
-
 
 class DashboardSummary(BaseModel):
     inspections_total: int
@@ -198,5 +167,4 @@ class AttachmentOut(BaseModel):
     filename: str
     content_type: str
     storage_path: str
-    checklist_id: int | None = None
     created_at: datetime
