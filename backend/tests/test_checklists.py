@@ -25,3 +25,14 @@ def test_admin_creates_and_publishes_checklist():
         published = client.patch(f'/checklist-templates/{template_id}/status', json={'status': 'PUBLICADO'})
         assert published.status_code == 200
         assert published.json()['status'] == 'PUBLICADO'
+
+
+def test_checklist_creation_accepts_attached_pdf():
+    with TestClient(app) as client:
+        client.headers['Authorization'] = f'Bearer {login(client, "fiscal@aeroops.local")}'
+        payload = {'name': 'Checklist com anexo', 'inspection_type': 'PATIO', 'items': [{'item_key': 'item_1', 'label': 'Verificar área'}]}
+        created = client.post('/checklist-templates', json=payload)
+        assert created.status_code == 201
+        uploaded = client.post(f"/attachments?checklist_id={created.json()['id']}", files={'file': ('procedimento.pdf', b'%PDF-1.4 demo', 'application/pdf')})
+        assert uploaded.status_code == 201
+        assert uploaded.json()['checklist_id'] == created.json()['id']

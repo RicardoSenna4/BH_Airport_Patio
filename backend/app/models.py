@@ -70,6 +70,7 @@ class ChecklistTemplate(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     items: Mapped[list["ChecklistItem"]] = relationship(cascade="all, delete-orphan", order_by="ChecklistItem.position")
+    attachments: Mapped[list["Attachment"]] = relationship(foreign_keys="Attachment.checklist_id", cascade="all, delete-orphan")
 
 
 class ChecklistItem(Base):
@@ -139,6 +140,7 @@ class Attachment(Base):
     __tablename__ = "attachments"
     id: Mapped[int] = mapped_column(primary_key=True)
     occurrence_id: Mapped[int | None] = mapped_column(ForeignKey("occurrences.id"))
+    checklist_id: Mapped[int | None] = mapped_column(ForeignKey("checklist_templates.id"), index=True)
     inspection_id: Mapped[int | None] = mapped_column(ForeignKey("inspections.id"))
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(120))

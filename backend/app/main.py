@@ -8,7 +8,8 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from PIL import Image, UnidentifiedImageError
-from sqlalchemy import Integer, func, select
+from sqlalchemy import Integer, func, select, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, selectinload
 from starlette.staticfiles import StaticFiles
 
@@ -59,6 +60,12 @@ def seed_users():
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(engine)
+    if engine.dialect.name == "sqlite":
+        try:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE attachments ADD COLUMN checklist_id INTEGER"))
+        except OperationalError:
+            pass
     seed_users()
     yield
 
@@ -270,7 +277,7 @@ def transition_occurrence(occurrence_id: int, data: OccurrenceTransition, db: Se
 
 
 @app.post("/attachments", response_model=AttachmentOut, status_code=201)
-def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = None, occurrence_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = None, occurrence_id: int | None = None, checklist_id: int | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)):
     if file.content_type not in {"image/jpeg", "image/png", "application/pdf"}:
         raise HTTPException(status_code=415, detail="Apenas JPG, JPEG, PNG ou PDF são aceitos")
     content = file.file.read()
@@ -284,6 +291,14 @@ def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = 
         total_bytes = sum((UPLOAD_DIR / Path(item.storage_path).name).stat().st_size for item in existing if (UPLOAD_DIR / Path(item.storage_path).name).exists())
         if total_bytes + len(content) > 50 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="A inspeção atingiu o limite total de 50 MB em anexos")
+    if checklist_id:
+        checklist = db.get(ChecklistTemplate, checklist_id)
+        if not checklist:
+            raise HTTPException(status_code=404, detail="Checklist não encontrado")
+        existing = db.scalars(select(Attachment).where(Attachment.checklist_id == checklist_id)).all()
+        total_bytes = sum((UPLOAD_DIR / Path(item.storage_path).name).stat().st_size for item in existing if (UPLOAD_DIR / Path(item.storage_path).name).exists())
+        if total_bytes + len(content) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="O checklist atingiu o limite total de 50 MB em anexos")
     stored_type = file.content_type
     if file.content_type.startswith("image/"):
         try:
@@ -302,7 +317,7 @@ def upload_attachment(file: UploadFile = File(...), inspection_id: int | None = 
     safe_name = f"{uuid4().hex}{extension}"
     path = UPLOAD_DIR / safe_name
     path.write_bytes(content)
-    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, filename=file.filename or safe_name, content_type=stored_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
+    attachment = Attachment(inspection_id=inspection_id, occurrence_id=occurrence_id, checklist_id=checklist_id, filename=file.filename or safe_name, content_type=stored_type, storage_path=f"/uploads/{safe_name}", created_by=user.id)
     db.add(attachment)
     db.flush()
     audit(db, user, "attachment", attachment.id, "UPLOAD", attachment.filename)

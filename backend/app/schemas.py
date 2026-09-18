@@ -198,4 +198,5 @@ class AttachmentOut(BaseModel):
     filename: str
     content_type: str
     storage_path: str
+    checklist_id: int | None = None
     created_at: datetime
