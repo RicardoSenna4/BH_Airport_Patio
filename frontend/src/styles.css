@@ -1103,3 +1103,63 @@ tr:last-child td {
     grid-column: auto;
   }
 }
+
+/* Menu de ramais e telefones */
+.directory-panel { padding: 24px; }
+.directory-search-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.directory-search {
+  display: flex; align-items: center; gap: 11px; width: 100%; min-height: 54px;
+  padding: 0 16px; border: 1px solid var(--bha-border-default); border-radius: 10px;
+  background: #fff; color: var(--bha-text-subtle); box-shadow: 0 2px 8px #172b4d08;
+}
+.directory-search:focus-within { border-color: var(--bha-c-primary-500); box-shadow: 0 0 0 3px #0876c11c; }
+.directory-search input { flex: 1; min-width: 0; border: 0; outline: 0; color: var(--bha-text-default); background: transparent; font-size: 15px; }
+.directory-search input::placeholder { color: var(--bha-text-subtle); }
+.directory-clear, .directory-card-actions button {
+  display: grid; place-items: center; border: 0; border-radius: 7px; color: var(--bha-text-muted);
+  background: transparent; width: 34px; height: 34px;
+}
+.directory-clear:hover, .directory-card-actions button:hover { background: var(--bha-surface-subtle); color: var(--bha-text-brand); }
+.directory-count { color: var(--bha-text-subtle); white-space: nowrap; font-size: 12px; }
+.directory-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.directory-card {
+  min-width: 0; padding: 19px; border: 1px solid var(--bha-border-subtle); border-radius: 11px;
+  background: var(--bha-surface-default); transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.directory-card:hover { border-color: var(--bha-border-default); box-shadow: 0 5px 18px #172b4d0d; }
+.directory-card-head { display: flex; align-items: flex-start; gap: 12px; }
+.directory-company-icon { display: grid; flex: 0 0 38px; place-items: center; height: 38px; border-radius: 9px; background: var(--bha-surface-subtle); color: var(--bha-text-brand); }
+.directory-card-title { flex: 1; min-width: 0; }
+.directory-card-title h2 { margin: 1px 0 5px; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.directory-location { display: flex; align-items: flex-start; gap: 5px; margin: 0; color: var(--bha-text-subtle); font-size: 12px; line-height: 1.45; }
+.directory-location svg { flex: 0 0 auto; margin-top: 1px; }
+.directory-card-actions { display: flex; gap: 2px; margin: -5px -7px 0 0; }
+.directory-phone { display: inline-flex; align-items: center; gap: 9px; margin: 17px 0 13px 50px; color: var(--bha-text-brand); font-size: 18px; font-weight: 750; text-decoration: none; }
+.directory-phone:hover { text-decoration: underline; }
+.directory-detail { display: flex; align-items: center; gap: 9px; margin: 0 0 13px 50px; color: var(--bha-text-default); }
+.directory-detail > svg { flex: 0 0 auto; color: var(--bha-text-subtle); }
+.directory-detail span { display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; font-size: 13px; }
+.directory-detail small { color: var(--bha-text-subtle); font-size: 10px; }
+.directory-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: 50px; color: var(--bha-text-subtle); }
+.directory-tag { padding: 4px 8px; border-radius: 99px; background: var(--bha-surface-subtle); color: var(--bha-text-muted); font-size: 11px; line-height: 1.2; }
+.directory-empty { display: flex; min-height: 250px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; color: var(--bha-text-subtle); }
+.directory-empty > svg { margin-bottom: 12px; color: var(--bha-text-brand); }
+.directory-empty strong { color: var(--bha-text-default); font-size: 15px; }
+.directory-empty p { max-width: 420px; margin: 7px 0 16px; color: var(--bha-text-subtle); line-height: 1.5; }
+.directory-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.directory-form-actions .button:disabled { cursor: wait; opacity: .65; }
+@media (max-width: 900px) { .directory-grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .directory-panel { padding: 16px; }
+  .directory-actions { align-items: flex-start; gap: 14px; }
+  .directory-actions .button { white-space: nowrap; }
+  .directory-search-row { align-items: stretch; flex-direction: column; gap: 8px; }
+  .directory-count { align-self: flex-end; }
+}
+@media (max-width: 480px) {
+  .directory-actions { flex-direction: column; }
+  .directory-card { padding: 15px; }
+  .directory-phone, .directory-detail, .directory-tags { margin-left: 0; }
+  .directory-form-actions { flex-direction: column-reverse; }
+  .directory-form-actions .button { width: 100%; }
+}
