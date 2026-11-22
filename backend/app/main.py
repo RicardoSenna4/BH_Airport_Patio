@@ -13,7 +13,7 @@ import pyotp
 from fastapi import Body, Cookie, Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import Integer, func, select
+from sqlalchemy import Integer, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -24,11 +24,12 @@ from .database import Base, SessionLocal, engine, get_db
 from .logging_config import configure_logging
 from .models import (
     AnswerStatus, Attachment, AuditLog, AuthEvent,
-    Equipment, Inspection, InspectionAnswer, InspectionStatus, Occurrence, OccurrenceStatus,
+    DirectoryContact, Equipment, Inspection, InspectionAnswer, InspectionStatus, Occurrence, OccurrenceStatus,
     AuthSession, Role, Severity, User,
 )
 from .schemas import (
-    AttachmentOut, AuditLogOut, AuthEventOut, DashboardSummary,
+    AttachmentOut, AuditLogOut, AuthEventOut, DashboardSummary, DirectoryContactCreate,
+    DirectoryContactOut, DirectoryContactUpdate,
     EquipmentCreate, EquipmentOut, EquipmentUpdate, GridCellOut, InspectionCreate,
     InspectionOut, MfaCode, MfaSetupOut, OccurrenceOut, OccurrenceTransition, PasswordChange, RefreshRequest,
     ReportSummary, SessionOut, Token, UserCreate, UserOut, UserUpdate,
@@ -638,6 +639,79 @@ def update_equipment(equipment_id: int, data: EquipmentUpdate, db: Session = Dep
 def equipment_alerts(days: int = Query(30, ge=0, le=365), db: Session = Depends(get_db), _: User = Depends(current_user)):
     limit = date.today() + timedelta(days=days)
     return db.scalars(select(Equipment).where(Equipment.active.is_(True), Equipment.next_inspection <= limit).order_by(Equipment.next_inspection)).all()
+
+
+@app.get("/directory/contacts", response_model=list[DirectoryContactOut])
+def list_directory_contacts(
+    q: str | None = Query(default=None, max_length=120),
+    db: Session = Depends(get_db),
+    _: User = Depends(current_user),
+):
+    query = select(DirectoryContact)
+    term = q.strip().casefold() if q else ""
+    if term:
+        searchable = (
+            DirectoryContact.business_name,
+            DirectoryContact.contact_name,
+            DirectoryContact.phone,
+            DirectoryContact.location,
+            DirectoryContact.tags,
+        )
+        query = query.where(
+            or_(*[
+                func.lower(field).contains(term, autoescape=True)
+                for field in searchable
+            ])
+        )
+    return db.scalars(query.order_by(func.lower(DirectoryContact.business_name), DirectoryContact.id)).all()
+
+
+@app.post("/directory/contacts", response_model=DirectoryContactOut, status_code=201)
+def create_directory_contact(
+    data: DirectoryContactCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    item = DirectoryContact(**data.model_dump())
+    db.add(item)
+    db.flush()
+    audit(db, user, "directory_contact", item.id, "CREATE", f"business_name={item.business_name}")
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.patch("/directory/contacts/{contact_id}", response_model=DirectoryContactOut)
+def update_directory_contact(
+    contact_id: int,
+    data: DirectoryContactUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    item = db.get(DirectoryContact, contact_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Contato não encontrado")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    audit(db, user, "directory_contact", item.id, "UPDATE", f"business_name={item.business_name}")
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/directory/contacts/{contact_id}", status_code=204)
+def delete_directory_contact(
+    contact_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    item = db.get(DirectoryContact, contact_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Contato não encontrado")
+    audit(db, user, "directory_contact", item.id, "DELETE", f"business_name={item.business_name}")
+    db.delete(item)
+    db.commit()
+    return Response(status_code=204)
 
 
 @app.get("/users", response_model=list[UserOut])

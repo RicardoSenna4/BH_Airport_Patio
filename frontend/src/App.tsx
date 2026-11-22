@@ -4,16 +4,24 @@ import {
   BarChart3,
   Bell,
   ClipboardCheck,
+  Building2,
   FileText,
   LayoutGrid,
   LogOut,
   Map,
+  MapPin,
   Menu,
   Plane,
+  Phone,
+  Pencil,
   Plus,
+  Search,
   Settings,
   ShieldCheck,
+  Tags,
+  Trash2,
   Users,
+  UserRound,
   X,
 } from "lucide-react";
 
@@ -26,6 +34,7 @@ type Page =
   | "occurrences"
   | "map"
   | "equipment"
+  | "directory"
   | "users"
   | "reports"
   | "settings";
@@ -124,6 +133,7 @@ const nav = [
   { id: "occurrences", label: "Ocorrências", icon: AlertTriangle },
   { id: "map", label: "Mapa operacional", icon: Map },
   { id: "equipment", label: "Equipamentos", icon: Plane },
+  { id: "directory", label: "Ramais e telefones", icon: Phone },
   { id: "users", label: "Usuários", icon: Users },
   { id: "reports", label: "Relatórios", icon: FileText },
   { id: "settings", label: "Configurações", icon: Settings },
@@ -242,6 +252,7 @@ export function App() {
           {page === "occurrences" && <Occurrences onError={setError} />}
           {page === "map" && <OperationalMap onError={setError} />}
           {page === "equipment" && <Equipment user={user} onError={setError} />}
+          {page === "directory" && <Directory onError={setError} />}
           {page === "users" && <UsersPage user={user} onError={setError} />}
           {page === "reports" && <Reports onError={setError} />}
           {page === "settings" && <SettingsPage />}
@@ -259,6 +270,7 @@ function pageTitle(page: Page) {
       occurrences: "Ocorrências",
       map: "Mapa operacional",
       equipment: "Equipamentos",
+      directory: "Menu de ramais e telefones",
       users: "Usuários e acessos",
       reports: "Relatórios",
       settings: "Configurações",
@@ -632,6 +644,272 @@ function OperationalMap({ onError }: any) {
     </>
   );
 }
+type DirectoryContact = {
+  id: number;
+  business_name: string;
+  contact_name: string | null;
+  phone: string;
+  location: string | null;
+  tags: string | null;
+};
+
+const emptyDirectoryContact = {
+  business_name: "",
+  contact_name: "",
+  phone: "",
+  location: "",
+  tags: "",
+};
+
+function Directory({ onError }: { onError: (message: string) => void }) {
+  const [items, setItems] = useState<DirectoryContact[]>([]);
+  const [query, setQuery] = useState("");
+  const [show, setShow] = useState(false);
+  const [editing, setEditing] = useState<DirectoryContact | null>(null);
+  const [form, setForm] = useState({ ...emptyDirectoryContact });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const timer = window.setTimeout(() => {
+      const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : "";
+      request(`/directory/contacts${suffix}`)
+        .then((results) => {
+          if (active) setItems(results);
+        })
+        .catch((err) => {
+          if (active) onError(err.message);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, 160);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query, onError]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ ...emptyDirectoryContact });
+    setShow(true);
+  };
+
+  const openEdit = (item: DirectoryContact) => {
+    setEditing(item);
+    setForm({
+      business_name: item.business_name,
+      contact_name: item.contact_name || "",
+      phone: item.phone,
+      location: item.location || "",
+      tags: item.tags || "",
+    });
+    setShow(true);
+  };
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const path = editing
+        ? `/directory/contacts/${editing.id}`
+        : "/directory/contacts";
+      await request(path, {
+        method: editing ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...form,
+          contact_name: form.contact_name.trim() || null,
+          location: form.location.trim() || null,
+          tags: form.tags.trim() || null,
+        }),
+      });
+      setShow(false);
+      setEditing(null);
+      setForm({ ...emptyDirectoryContact });
+      const suffix = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : "";
+      setItems(await request(`/directory/contacts${suffix}`));
+    } catch (err: any) {
+      onError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (item: DirectoryContact) => {
+    if (!window.confirm(`Excluir o contato “${item.business_name}”?`)) return;
+    try {
+      await request(`/directory/contacts/${item.id}`, { method: "DELETE" });
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
+    } catch (err: any) {
+      onError(err.message);
+    }
+  };
+
+  return (
+    <>
+      <div className="page-actions directory-actions">
+        <div>
+          <p className="eyebrow">CONSULTA RÁPIDA · BALCÃO DE INFORMAÇÕES</p>
+          <p className="muted">
+            Encontre lojas, órgãos e responsáveis por nome, telefone ou termos alternativos.
+          </p>
+        </div>
+        <button className="button button-primary" onClick={openCreate}>
+          <Plus size={17} /> Novo contato
+        </button>
+      </div>
+
+      <section className="surface directory-panel">
+        <div className="directory-search-row">
+          <label className="directory-search" htmlFor="directory-query">
+            <Search size={19} aria-hidden="true" />
+            <input
+              id="directory-query"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar empresa, responsável, ramal ou palavra-chave…"
+              autoComplete="off"
+            />
+            {query && (
+              <button
+                type="button"
+                className="directory-clear"
+                onClick={() => setQuery("")}
+                aria-label="Limpar busca"
+              >
+                <X size={17} />
+              </button>
+            )}
+          </label>
+          <span className="directory-count">
+            {loading ? "Buscando…" : `${items.length} ${items.length === 1 ? "contato" : "contatos"}`}
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="directory-empty">
+            <Search size={28} />
+            <strong>Pesquisando na agenda</strong>
+            <p>Aguarde um instante.</p>
+          </div>
+        ) : items.length ? (
+          <div className="directory-grid">
+            {items.map((item) => (
+              <article className="directory-card" key={item.id}>
+                <div className="directory-card-head">
+                  <div className="directory-company-icon"><Building2 size={19} /></div>
+                  <div className="directory-card-title">
+                    <h2>{item.business_name}</h2>
+                    {item.location && (
+                      <p className="directory-location"><MapPin size={14} /> {item.location}</p>
+                    )}
+                  </div>
+                  <div className="directory-card-actions">
+                    <button type="button" title="Editar contato" aria-label={`Editar ${item.business_name}`} onClick={() => openEdit(item)}>
+                      <Pencil size={16} />
+                    </button>
+                    <button type="button" title="Excluir contato" aria-label={`Excluir ${item.business_name}`} onClick={() => remove(item)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <a className="directory-phone" href={`tel:${item.phone.replace(/[^+\d]/g, "")}`}>
+                  <Phone size={17} />
+                  <span>{item.phone}</span>
+                </a>
+                {item.contact_name && (
+                  <div className="directory-detail"><UserRound size={15} /><span><small>Responsável / contato</small>{item.contact_name}</span></div>
+                )}
+                {item.tags && (
+                  <div className="directory-tags">
+                    <Tags size={14} />
+                    {item.tags.split(",").map((tag) => tag.trim()).filter(Boolean).map((tag, index) => (
+                      <span className="directory-tag" key={`${tag}-${index}`}>{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="directory-empty">
+            <Phone size={30} />
+            <strong>{query ? "Nenhum contato encontrado" : "Sua agenda começa aqui"}</strong>
+            <p>{query ? "Tente outro nome, número ou termo de busca." : "Cadastre lojas, órgãos e responsáveis para agilizar o atendimento."}</p>
+            {!query && <button className="button button-secondary" onClick={openCreate}><Plus size={16} /> Cadastrar primeiro contato</button>}
+          </div>
+        )}
+      </section>
+
+      {show && (
+        <Modal title={editing ? "Editar contato" : "Novo contato"} onClose={() => setShow(false)}>
+          <form className="modal-form" onSubmit={save}>
+            <label>
+              Empresa, loja ou órgão
+              <input
+                autoFocus
+                required
+                maxLength={160}
+                value={form.business_name}
+                onChange={(event) => setForm({ ...form, business_name: event.target.value })}
+                placeholder="Ex.: Casa do Pão de Queijo"
+              />
+            </label>
+            <label>
+              Responsável / contato
+              <input
+                maxLength={120}
+                value={form.contact_name}
+                onChange={(event) => setForm({ ...form, contact_name: event.target.value })}
+                placeholder="Nome do gerente ou responsável"
+              />
+            </label>
+            <label>
+              Ramal / telefone
+              <input
+                required
+                type="tel"
+                maxLength={80}
+                value={form.phone}
+                onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                placeholder="Ex.: (31) 3689-1234"
+              />
+            </label>
+            <label>
+              Localização / descrição
+              <input
+                maxLength={300}
+                value={form.location}
+                onChange={(event) => setForm({ ...form, location: event.target.value })}
+                placeholder="Ex.: Terminal, piso 2"
+              />
+            </label>
+            <label>
+              Tags e nomes alternativos para busca
+              <input
+                maxLength={500}
+                value={form.tags}
+                onChange={(event) => setForm({ ...form, tags: event.target.value })}
+                placeholder="Separe por vírgulas: nome do proprietário, entrega"
+              />
+              <small>Inclua apelidos, nomes de proprietários ou termos que apareçam em notas.</small>
+            </label>
+            <div className="directory-form-actions">
+              <button type="button" className="button button-secondary" onClick={() => setShow(false)}>Cancelar</button>
+              <button className="button button-primary" disabled={saving}>
+                {saving ? "Salvando…" : editing ? "Salvar alterações" : "Cadastrar contato"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
+}
+
 function Equipment({ user, onError }: any) {
   const [items, setItems] = useState<any[]>([]);
   const [show, setShow] = useState(false);

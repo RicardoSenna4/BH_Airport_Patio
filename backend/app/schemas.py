@@ -205,6 +205,61 @@ class EquipmentUpdate(BaseModel):
     active: bool | None = None
 
 
+class DirectoryContactFields(BaseModel):
+    business_name: str = Field(min_length=1, max_length=160)
+    contact_name: str | None = Field(default=None, max_length=120)
+    phone: str = Field(min_length=1, max_length=80)
+    location: str | None = Field(default=None, max_length=300)
+    tags: str | None = Field(default=None, max_length=500)
+
+    @field_validator("business_name", "contact_name", "phone", "location", "tags")
+    @classmethod
+    def trim_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        return value or None
+
+
+class DirectoryContactCreate(DirectoryContactFields):
+    @model_validator(mode="after")
+    def require_business_and_phone(self):
+        if not self.business_name or not self.phone:
+            raise ValueError("Empresa/órgão e ramal/telefone são obrigatórios")
+        return self
+
+
+class DirectoryContactUpdate(BaseModel):
+    business_name: str | None = Field(default=None, min_length=1, max_length=160)
+    contact_name: str | None = Field(default=None, max_length=120)
+    phone: str | None = Field(default=None, min_length=1, max_length=80)
+    location: str | None = Field(default=None, max_length=300)
+    tags: str | None = Field(default=None, max_length=500)
+
+    @field_validator("business_name", "contact_name", "phone", "location", "tags")
+    @classmethod
+    def trim_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        return value or None
+
+    @model_validator(mode="after")
+    def keep_required_fields_nonempty(self):
+        if "business_name" in self.model_fields_set and not self.business_name:
+            raise ValueError("Nome da empresa/órgão não pode ficar vazio")
+        if "phone" in self.model_fields_set and not self.phone:
+            raise ValueError("Ramal/telefone não pode ficar vazio")
+        return self
+
+
+class DirectoryContactOut(DirectoryContactFields):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class GridCellOut(BaseModel):
     code: str
     row: int

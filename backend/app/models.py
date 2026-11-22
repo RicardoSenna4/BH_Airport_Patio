@@ -166,6 +166,18 @@ class Equipment(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class DirectoryContact(Base):
+    __tablename__ = "directory_contacts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    business_name: Mapped[str] = mapped_column(String(160), index=True)
+    contact_name: Mapped[str | None] = mapped_column(String(120))
+    phone: Mapped[str] = mapped_column(String(80))
+    location: Mapped[str | None] = mapped_column(String(300))
+    tags: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id: Mapped[int] = mapped_column(primary_key=True)

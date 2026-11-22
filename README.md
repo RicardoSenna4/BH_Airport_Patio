@@ -6,6 +6,7 @@ Sistema de gestão operacional aeroportuária para inspeções, não conformidad
 
 - inspeções com rascunho, checklist, quadrícula e evidências;
 - geração e tratamento de ocorrências por fluxo operacional;
+- agenda autônoma de ramais e telefones com busca parcial e gestão de contatos;
 - perfis Fiscal, Supervisor, Analista, Coordenação e Administrador;
 - equipamentos, mapa operacional, relatórios e trilha de auditoria;
 - autenticação com Argon2id, MFA TOTP, sessões revogáveis, CSRF e rate limit;
